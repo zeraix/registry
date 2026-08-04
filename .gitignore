@@ -1,0 +1,8 @@
+# Build output: regenerated on every publish, signed with the release key. Never committed —
+# a stale signed feed in the repo is a rollback waiting to be served.
+dist/
+
+# The app's built-in skills, regenerated from src/skills/*.md in the app repo on every publish.
+# Committing them would put a second copy of each skill under version control, and the two would
+# drift the first time one is edited.
+plugins/zeraix/

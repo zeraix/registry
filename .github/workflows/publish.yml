@@ -1,0 +1,95 @@
+name: Publish feeds
+
+# Merging is publishing (design doc §5.4). This builds the index and kill-list, signs them with the
+# RELEASE key, and uploads them with the root-signed delegation that authorizes that key.
+#
+# The root key is not here and must never be. It lives on an offline machine and signs only
+# keys.json, which is committed to this repo as a plain (secret-free) artifact. A compromise of this
+# workflow can publish signed feeds; it cannot mint a new key or survive revocation. See §5.1 for
+# where that bound stops.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout registry
+        uses: actions/checkout@v4
+
+      - name: Checkout app (shared validator + builder + built-in skills)
+        uses: actions/checkout@v4
+        with:
+          repository: zeraix/zeraix
+          path: .app
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Regenerate the built-in skills as zeraix/* plugins. They are gitignored here so there is one
+      # copy of each skill (in the app repo) and the two cannot drift.
+      - name: Materialize built-in skills
+        run: node .app/scripts/export-builtin-skills.mjs --out .
+
+      # No signing yet: a manifest problem should fail before the key is touched.
+      - name: Validate everything
+        run: node .app/scripts/build-registry-index.mjs --root . --check
+
+      - name: Check the delegation is present
+        run: |
+          if [ ! -f keys.json ]; then
+            echo "::error::keys.json is missing. Clients reject every feed without it — produce one"
+            echo "::error::offline with scripts/sign-delegation.mjs and commit the result."
+            exit 1
+          fi
+
+      - name: Build and sign
+        env:
+          # Private half of the RELEASE key, base64 of its PEM. Rotate by issuing a new delegation;
+          # no client release is needed.
+          REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
+          RELEASE_KEY_ID: ${{ vars.RELEASE_KEY_ID }}
+          # Where plugin artifacts are served from; the index derives per-plugin URLs beneath it.
+          PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
+        run: |
+          test -n "$REGISTRY_SIGNING_KEY" || { echo "::error::REGISTRY_SIGNING_KEY is not set"; exit 1; }
+          test -n "$RELEASE_KEY_ID"       || { echo "::error::RELEASE_KEY_ID variable is not set"; exit 1; }
+          test -n "$PLUGIN_BASE_URL"      || { echo "::error::PLUGIN_BASE_URL variable is not set"; exit 1; }
+          node .app/scripts/build-registry-index.mjs \
+            --root . --base-url "$PLUGIN_BASE_URL" --key-id "$RELEASE_KEY_ID"
+
+      # Feeds and artifacts are served from our own API origin (design doc §5.2) — no object storage.
+      #
+      # TODO: this endpoint does not exist yet. It needs to accept dist/{index,killlist,keys}.json
+      # plus the plugin files under plugins/**/files/, and serve them at
+      #   <api origin>/plugins/{index,killlist,keys}.json
+      #   <PLUGIN_BASE_URL>/<publisher>/<name>/<version>/<file>
+      # Everything it serves is either signed or hash-pinned by something signed, so the endpoint
+      # needs authentication but does not need to be trusted for integrity.
+      - name: Upload to the API origin
+        env:
+          PUBLISH_URL: ${{ vars.PUBLISH_URL }}
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: |
+          if [ -z "$PUBLISH_URL" ]; then
+            echo "::warning::PUBLISH_URL is not set — built and signed, but nothing was uploaded."
+            exit 0
+          fi
+          echo "::error::The publish endpoint is not implemented yet. Wire this step to $PUBLISH_URL."
+          exit 1
+
+      - name: Upload feeds as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: registry-feeds
+          path: dist/
+          if-no-files-found: error
+          retention-days: 30

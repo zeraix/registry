@@ -1,0 +1,38 @@
+name: Validate submissions
+
+# Runs on every pull request, including from forks. No secrets are used and nothing is signed, which
+# is deliberate: this is the review gate (design doc §5.4), and a gate that only works for
+# maintainers is not a gate.
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout registry
+        uses: actions/checkout@v4
+
+      # The validator IS the client's validator (electron/plugins/manifest.mjs). Vendoring a copy
+      # here would let the two drift, and then "strict mode passed" would stop meaning "clients will
+      # accept this" — which is the entire value of validating at review time.
+      - name: Checkout app (for the shared validator)
+        uses: actions/checkout@v4
+        with:
+          repository: zeraix/zeraix
+          path: .app
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Third-party submissions only. plugins/zeraix/* is generated at publish time from the app's
+      # src/skills, so it is not present here and does not need to be.
+      - name: Validate manifests
+        run: node .app/scripts/build-registry-index.mjs --root . --check
