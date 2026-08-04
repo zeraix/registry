@@ -23,16 +23,49 @@ jobs:
       - name: Checkout registry
         uses: actions/checkout@v4
 
+      # Which app version? Not `main` — see _app-checkout.md. Validating against unreleased code
+      # would accept manifests that every shipped client skips, with a green check to say otherwise.
+      - name: Resolve app ref
+        id: app
+        env:
+          APP_REF: ${{ vars.APP_REF }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "$APP_REF" ]; then
+            echo "ref=$APP_REF" >> "$GITHUB_OUTPUT"
+            echo "pinned to $APP_REF via the APP_REF variable"
+            exit 0
+          fi
+          ref="$(gh release view --repo zeraix/zeraix --json tagName --jq .tagName 2>/dev/null || true)"
+          if [ -z "$ref" ]; then
+            echo "::error::could not resolve the latest zeraix/zeraix release. Set the APP_REF variable to a tag."
+            exit 1
+          fi
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+          echo "using the latest app release: $ref"
+
       - name: Checkout app (shared validator + builder + built-in skills)
         uses: actions/checkout@v4
         with:
           repository: zeraix/zeraix
+          ref: ${{ steps.app.outputs.ref }}
           path: .app
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      # A missing builder means the app release predates the plugin tooling — a MODULE_NOT_FOUND
+      # stack trace does not say that, and this is the first thing anyone will hit.
+      - name: Check the shared tooling is present
+        run: |
+          if [ ! -f .app/scripts/build-registry-index.mjs ]; then
+            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no scripts/build-registry-index.mjs."
+            echo "::error::That release predates the plugin tooling. Ship a release containing it, or set"
+            echo "::error::the APP_REF variable to a ref that has it."
+            exit 1
+          fi
 
       # Regenerate the built-in skills as zeraix/* plugins. They are gitignored here so there is one
       # copy of each skill (in the app repo) and the two cannot drift.
@@ -43,28 +76,55 @@ jobs:
       - name: Validate everything
         run: node .app/scripts/build-registry-index.mjs --root . --check
 
-      - name: Check the delegation is present
+      # Bootstrap vs misconfigured — a distinction worth making, because they deserve opposite
+      # outcomes. Before the key ceremony has happened at all, validation-only is the honest result
+      # and a red X on every merge would just train everyone to ignore this workflow. Once signing is
+      # half set up, silence is dangerous: it means feeds nobody can verify, or a key with nothing
+      # authorizing it. That fails loudly.
+      - name: Assess signing configuration
+        id: cfg
+        env:
+          REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
+          PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
         run: |
-          if [ ! -f keys.json ]; then
-            echo "::error::keys.json is missing. Clients reject every feed without it — produce one"
-            echo "::error::offline with scripts/sign-delegation.mjs and commit the result."
-            exit 1
+          have_key=0; have_delegation=0
+          [ -n "$REGISTRY_SIGNING_KEY" ] && [ -n "$PLUGIN_BASE_URL" ] && have_key=1
+          [ -f keys.json ] && have_delegation=1
+
+          if [ "$have_key" = "0" ] && [ "$have_delegation" = "0" ]; then
+            echo "::notice::Registry not signed yet — validated $(ls -d plugins/*/* 2>/dev/null | wc -l) plugin(s) and stopped."
+            echo "::notice::To publish: generate the root key offline, embed it in the client, ship a"
+            echo "::notice::release, then add REGISTRY_SIGNING_KEY + PLUGIN_BASE_URL and commit a"
+            echo "::notice::root-signed keys.json. See the README setup checklist."
+            echo "sign=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
+          if [ "$have_delegation" = "0" ]; then
+            echo "::error::A release key is configured but keys.json is missing. Feeds signed with it"
+            echo "::error::would be rejected by every client. Produce the delegation offline with"
+            echo "::error::scripts/sign-delegation.mjs and commit it."
+            exit 1
+          fi
+          if [ "$have_key" = "0" ]; then
+            echo "::error::keys.json is present but signing is not configured. Set REGISTRY_SIGNING_KEY"
+            echo "::error::and PLUGIN_BASE_URL, or the delegation authorizes nothing."
+            exit 1
+          fi
+          echo "sign=true" >> "$GITHUB_OUTPUT"
+
       - name: Build and sign
+        if: steps.cfg.outputs.sign == 'true'
         env:
-          # Private half of the RELEASE key, base64 of its PEM. Rotate by issuing a new delegation;
-          # no client release is needed.
+          # Private half of the RELEASE key: paste the PEM straight in, or base64 of it. Rotate by
+          # issuing a new delegation; no client release is needed.
           REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
-          RELEASE_KEY_ID: ${{ vars.RELEASE_KEY_ID }}
           # Where plugin artifacts are served from; the index derives per-plugin URLs beneath it.
           PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
         run: |
-          test -n "$REGISTRY_SIGNING_KEY" || { echo "::error::REGISTRY_SIGNING_KEY is not set"; exit 1; }
-          test -n "$RELEASE_KEY_ID"       || { echo "::error::RELEASE_KEY_ID variable is not set"; exit 1; }
-          test -n "$PLUGIN_BASE_URL"      || { echo "::error::PLUGIN_BASE_URL variable is not set"; exit 1; }
-          node .app/scripts/build-registry-index.mjs \
-            --root . --base-url "$PLUGIN_BASE_URL" --key-id "$RELEASE_KEY_ID"
+          # The key id comes from keys.json — the delegation already says which key may sign, and a
+          # second copy in a CI variable is one more thing to keep in step.
+          node .app/scripts/build-registry-index.mjs --root . --base-url "$PLUGIN_BASE_URL"
 
       # Feeds and artifacts are served from our own API origin (design doc §5.2) — no object storage.
       #
@@ -75,6 +135,7 @@ jobs:
       # Everything it serves is either signed or hash-pinned by something signed, so the endpoint
       # needs authentication but does not need to be trusted for integrity.
       - name: Upload to the API origin
+        if: steps.cfg.outputs.sign == 'true'
         env:
           PUBLISH_URL: ${{ vars.PUBLISH_URL }}
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
@@ -87,6 +148,7 @@ jobs:
           exit 1
 
       - name: Upload feeds as an artifact
+        if: steps.cfg.outputs.sign == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: registry-feeds

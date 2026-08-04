@@ -67,30 +67,57 @@ Two tiers (design doc §5.1). The root is the trust anchor and **never touches C
 | Root | An offline machine, nowhere else | Only `keys.json` |
 | Release | `REGISTRY_SIGNING_KEY` in this repo's Actions secrets | `index.json`, `killlist.json` |
 
-`keys.json` is the root-signed document naming which release keys may sign feeds, and for how long.
-Produce it on the offline machine and commit the result — it contains no secrets:
+`keys.json` is the root-signed document naming which release keys may sign feeds. Produce it on the
+offline machine and commit the result — it contains no secrets. `sign-delegation.mjs` imports nothing
+from the app repo, so that machine needs Node and that one file, not a checkout:
 
 ```bash
 # on the offline machine, with rel-*.pub copied over (public half only)
-node scripts/sign-delegation.mjs \
-  --root-key ~/keys/root-2026.pem --root-key-id root-2026 \
-  --key rel-2026-08.pub --months 6 --out keys.json
+node sign-delegation.mjs \
+  --root-key root-2026.pem --root-key-id root-2026 \
+  --key rel-2026-08.pub --out keys.json
 ```
 
-**Re-issue before it expires.** Clients stop accepting anything the registry signs once the window
-closes, and the fix requires a human at the offline machine. The app warns 30 days out.
+**Keys do not expire.** Revocation is the mechanism: if a release key leaks, re-run without it and
+every install that fetches the new delegation stops accepting its signatures. An expiry window would
+add a backstop against a leak nobody ever notices, at the cost of a recurring offline ceremony that
+takes the whole marketplace down if it is ever missed. Pass `--months N` if you want one anyway.
 
 To rotate: sign a delegation listing both keys, switch CI to the new one, then re-issue without the
-old. To revoke a leaked release key: re-issue without it. The sequence number must climb, which is
-what stops the old delegation being replayed to hand the leaked key its authority back.
+old. The sequence number climbs on every issuance, which is what stops an old delegation being
+replayed to hand a revoked key its authority back.
+
+## Which app version validates submissions
+
+Both workflows borrow the validator from `zeraix/zeraix` rather than vendoring a copy, and they pin
+that checkout to the app's **latest release tag** — not `main`. Validating against unreleased code
+would accept manifests that every shipped client skips, and report it as a pass. See
+[`.github/workflows/_app-checkout.md`](.github/workflows/_app-checkout.md).
+
+Consequence worth knowing before the first publish: **the registry cannot publish until an app
+release contains the plugin tooling.** Until then, set the `APP_REF` repository variable to a branch
+or commit that has it (`main`, once the work is pushed) and clear it after the release ships.
+
+## Before the keys exist
+
+Publishing degrades rather than failing while the registry is being set up. With no signing key and
+no `keys.json`, the publish workflow validates every plugin, says so, and stops **green** — a red X
+on every merge would just train everyone to ignore it.
+
+Half-configured is different and fails loudly: a release key with no delegation would sign feeds
+every client rejects, and a delegation with no key authorizes nothing. Both are mistakes; neither is
+a state you pass through on purpose.
 
 ## Setup checklist
 
+0. Push the plugin tooling to `zeraix/zeraix` and cut a release containing it — or set `APP_REF` to a
+   ref that has it. The workflows fail with an explicit message if the tooling is missing.
 1. Generate the root key on an offline machine —
    `node scripts/gen-registry-key.mjs --role root --key-id root-2026`
 2. Paste its public key into `TRUSTED_ROOT_KEYS` in `electron/plugins/signature.mjs` and **ship a
    client release**. Clients only accept a delegation signed by a root key they already embed, so
    nothing works until a build carrying it is out.
-3. Generate a release key, store the private half as `REGISTRY_SIGNING_KEY`, take the `.pub` to the
-   offline machine, and sign `keys.json`.
-4. Set the `PLUGIN_BASE_URL` and `PUBLISH_URL` repository variables (see `publish.yml`).
+3. Generate a release key. Paste its PEM straight into the `REGISTRY_SIGNING_KEY` secret (no
+   base64 needed), take the `.pub` to the offline machine, and sign `keys.json`.
+4. Set the `PLUGIN_BASE_URL` and `PUBLISH_URL` repository variables (see `publish.yml`). The release
+   key id is read from `keys.json`, so there is nothing to configure for it.
