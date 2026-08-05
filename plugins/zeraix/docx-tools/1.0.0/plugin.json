@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/docx-tools",
+  "version": "1.0.0",
+  "name": "Word Documents",
+  "description": "Read Word .docx files: convert to Markdown with headings and tables intact, pull just the outline, or extract tables as structured rows.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/docx-tools",
+  "providers": {
+    "docx": {
+      "kind": "mcp-stdio",
+      "tier": "sandboxed",
+      "runtime": "node",
+      "entry": "server/index.js",
+      "permissions": {
+        "filesystem": [
+          "$WORKSPACE"
+        ]
+      }
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "docx_to_markdown",
+      "name": "Document to Markdown",
+      "description": "Convert a .docx to Markdown, preserving headings, lists and tables.",
+      "module": "reading",
+      "provider": "docx"
+    },
+    {
+      "type": "tool",
+      "id": "docx_outline",
+      "name": "Document outline",
+      "description": "Return only the heading structure, to locate a section cheaply.",
+      "module": "reading",
+      "provider": "docx"
+    },
+    {
+      "type": "tool",
+      "id": "docx_tables",
+      "name": "Extract tables",
+      "description": "Extract every table as structured rows.",
+      "module": "reading",
+      "provider": "docx"
+    },
+    {
+      "type": "skill",
+      "id": "word_documents",
+      "name": "Working with Word documents",
+      "description": "How to read and reason about .docx files, including a dependency-free fallback when the plugin's own tools are unavailable.",
+      "module": "guidance",
+      "path": "skill.md"
+    }
+  ]
+}

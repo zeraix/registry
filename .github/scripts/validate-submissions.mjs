@@ -210,8 +210,35 @@ for (const entry of collectPluginDirs(root)) {
 }
 
 for (const w of warnings) console.log(`::warning::${w}`);
+for (const p of problems) console.log(`::error::${p}`);
+
+/**
+ * Also write the outcome to the run summary.
+ *
+ * Annotations scroll away and are easy to miss on a green run, which is exactly when the result
+ * matters most here: this workflow can pass having done nothing but check, and a reader who sees
+ * only the tick will assume the marketplace changed. The summary is the one surface that survives
+ * on the run page.
+ */
+if (process.env.GITHUB_STEP_SUMMARY) {
+  const lines =
+    problems.length > 0
+      ? [`### ❌ ${problems.length} problem(s) — nothing is publishable`, "", ...problems.map((p) => `- ${p}`)]
+      : [`### ✅ ${checked} plugin(s) validated`];
+  if (warnings.length > 0) {
+    lines.push(
+      "",
+      `<details><summary>${warnings.length} warning(s) — reserved capability types and provider kinds not yet implemented</summary>`,
+      "",
+      ...warnings.map((w) => `- ${w}`),
+      "",
+      "</details>",
+    );
+  }
+  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${lines.join("\n")}\n\n`);
+}
+
 if (problems.length > 0) {
-  for (const p of problems) console.log(`::error::${p}`);
   console.error(`\n${problems.length} problem(s).`);
   process.exit(1);
 }

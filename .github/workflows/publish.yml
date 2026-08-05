@@ -1,7 +1,12 @@
-name: Publish feeds
+name: Validate and publish
 
 # Merging is publishing (design doc §5.4). This validates the committed plugins and uploads them to
 # the publish endpoint, which is what assembles the catalogue the app fetches. Nothing is built here.
+#
+# Named for what it does in BOTH states, not the happy one. Until an endpoint is configured this job
+# validates and stops — green, having changed nothing a user can see. A job called "Publish feeds"
+# going green in that state reads as "the marketplace updated", which is how a repo ends up believing
+# it shipped something it never sent anywhere.
 #
 # Nothing is signed: this repo's review history is the provenance (§5.1). The consequence is worth
 # being explicit about — write access to this repo, or to the publish endpoint, is write access to
@@ -74,9 +79,23 @@ jobs:
           PUBLISH_URL: ${{ vars.PUBLISH_URL }}
         run: |
           if [ -z "$PUBLISH_URL" ]; then
-            echo "::notice::No publish endpoint configured — validated $(ls -d plugins/*/* 2>/dev/null | wc -l) plugin(s) and stopped."
-            echo "::notice::To publish: stand up the endpoint, then set the PUBLISH_URL variable and the"
-            echo "::notice::PUBLISH_TOKEN secret. See the README checklist."
+            echo "::notice::No publish endpoint configured — validated and stopped. Nothing was uploaded."
+            {
+              echo "## ⚠️ Nothing was published"
+              echo
+              echo "The manifests validated, and that is **all** this run did. No \`PUBLISH_URL\` is"
+              echo "configured, so nothing was uploaded and the catalogue the app fetches is unchanged."
+              echo
+              echo "A green check on this run does **not** mean the marketplace updated."
+              echo
+              echo "To actually publish:"
+              echo
+              echo "1. Stand up the publish endpoint — it owes the client artifact digests, one document"
+              echo "   embedding every manifest, and a monotonic feed sequence. See the README checklist."
+              echo "2. Set the \`PUBLISH_URL\` variable and the \`PUBLISH_TOKEN\` secret."
+              echo "3. Flip \`PLUGINS_UI_ENABLED\` in the app and ship a release — until then the client"
+              echo "   never contacts the registry at all."
+            } >> "$GITHUB_STEP_SUMMARY"
             echo "publish=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -111,4 +130,13 @@ jobs:
           echo "::error::The publish endpoint is not implemented yet. Wire this step to $PUBLISH_URL."
           echo "::error::It must hash the artifacts, embed the manifests, and assign a monotonic"
           echo "::error::sequence — see the comment above this step for the full contract."
+          {
+            echo "## ❌ Not published"
+            echo
+            echo "\`PUBLISH_URL\` is set, but this step is still a stub — no upload was attempted."
+          } >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+          # When this step is implemented it must ALSO append a success block to $GITHUB_STEP_SUMMARY
+          # naming what was uploaded and the sequence assigned. Every other outcome of this workflow
+          # says plainly what it did; a successful publish should not be the one that stays silent.

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/pptx-tools",
+  "version": "1.0.0",
+  "name": "PowerPoint Presentations",
+  "description": "Read PowerPoint .pptx decks: convert to Markdown one section per slide, list slide titles, or extract speaker notes.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/pptx-tools",
+  "providers": {
+    "pptx": {
+      "kind": "mcp-stdio",
+      "tier": "sandboxed",
+      "runtime": "node",
+      "entry": "server/index.js",
+      "permissions": {
+        "filesystem": [
+          "$WORKSPACE"
+        ]
+      }
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "pptx_to_markdown",
+      "name": "Deck to Markdown",
+      "description": "Convert a deck to Markdown, one section per slide.",
+      "module": "reading",
+      "provider": "pptx"
+    },
+    {
+      "type": "tool",
+      "id": "pptx_outline",
+      "name": "Slide titles",
+      "description": "Return only the slide titles, to locate a slide cheaply.",
+      "module": "reading",
+      "provider": "pptx"
+    },
+    {
+      "type": "tool",
+      "id": "pptx_notes",
+      "name": "Speaker notes",
+      "description": "Extract the speaker notes for every slide.",
+      "module": "reading",
+      "provider": "pptx"
+    },
+    {
+      "type": "skill",
+      "id": "powerpoint_decks",
+      "name": "Working with PowerPoint decks",
+      "description": "How to read .pptx decks, why speaker notes usually matter more than the slides, and a dependency-free fallback.",
+      "module": "guidance",
+      "path": "skill.md"
+    }
+  ]
+}

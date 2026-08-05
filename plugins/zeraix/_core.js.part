@@ -1,0 +1,123 @@
+import { createInterface } from "node:readline";
+import fs from "node:fs";
+import path from "node:path";
+import zlib from "node:zlib";
+
+const WORKSPACE = path.resolve(process.env.ZERAIX_WORKSPACE ?? process.cwd());
+
+/* ------------------------------------------------------------------ paths */
+
+/**
+ * Resolve a caller-supplied path inside the workspace.
+ *
+ * Checked AFTER resolution, not on the raw string: "a/../../etc/passwd" only reveals itself as an
+ * escape once resolved, and screening the input for ".." misses every other spelling of it. The
+ * sandbox would refuse this too; doing it here as well means the check does not depend on the
+ * sandbox being present.
+ */
+function resolveInWorkspace(relPath) {
+  if (typeof relPath !== "string" || !relPath) throw new Error("path is required");
+  const abs = path.resolve(WORKSPACE, relPath);
+  if (abs !== WORKSPACE && !abs.startsWith(WORKSPACE + path.sep)) {
+    throw new Error(`path escapes the workspace: ${relPath}`);
+  }
+  return abs;
+}
+
+/* ------------------------------------------------------------------ zip */
+
+/**
+ * Read one entry out of a ZIP archive. OOXML files are ZIPs of XML parts.
+ *
+ * Driven by the central directory rather than by scanning for local headers: a local header repeats
+ * the name and sizes, but its size fields may be zeroed with the real values in a trailing data
+ * descriptor, so trusting them silently truncates entries written by streaming producers. The
+ * central directory always carries the authoritative sizes.
+ */
+function readZipEntry(buf, wanted) {
+  // End of central directory: signature 0x06054b50. Scan back from the end; the trailing comment is
+  // at most 64 KiB, so there is no reason to search further than that.
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65_557); i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) throw new Error("not a zip archive (no end-of-central-directory record)");
+
+  const count = buf.readUInt16LE(eocd + 10);
+  let p = buf.readUInt32LE(eocd + 16);
+
+  for (let i = 0; i < count; i++) {
+    if (buf.readUInt32LE(p) !== 0x02014b50) throw new Error("corrupt central directory");
+    const method = buf.readUInt16LE(p + 10);
+    const compressedSize = buf.readUInt32LE(p + 20);
+    const nameLen = buf.readUInt16LE(p + 28);
+    const extraLen = buf.readUInt16LE(p + 30);
+    const commentLen = buf.readUInt16LE(p + 32);
+    const localOffset = buf.readUInt32LE(p + 42);
+    const name = buf.toString("utf8", p + 46, p + 46 + nameLen);
+
+    if (name === wanted) {
+      if (buf.readUInt32LE(localOffset) !== 0x04034b50) throw new Error(`corrupt local header for ${name}`);
+      // The local header's own name/extra lengths are the ones that describe ITS layout, and the
+      // extra field routinely differs in length from the central copy.
+      const lNameLen = buf.readUInt16LE(localOffset + 26);
+      const lExtraLen = buf.readUInt16LE(localOffset + 28);
+      const start = localOffset + 30 + lNameLen + lExtraLen;
+      const raw = buf.subarray(start, start + compressedSize);
+      if (method === 0) return raw; // stored
+      if (method === 8) return zlib.inflateRawSync(raw); // deflate
+      throw new Error(`unsupported zip compression method ${method} for ${name}`);
+    }
+    p += 46 + nameLen + extraLen + commentLen;
+  }
+  return null;
+}
+
+/** Every entry name in the archive, for parts whose names are not fixed (slides, sheets). */
+function listZipEntries(buf) {
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65_557); i--) {
+    if (buf.readUInt32LE(i) === 0x06054b50) {
+      eocd = i;
+      break;
+    }
+  }
+  if (eocd < 0) throw new Error("not a zip archive (no end-of-central-directory record)");
+  const count = buf.readUInt16LE(eocd + 10);
+  let p = buf.readUInt32LE(eocd + 16);
+  const names = [];
+  for (let i = 0; i < count; i++) {
+    const nameLen = buf.readUInt16LE(p + 28);
+    names.push(buf.toString("utf8", p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + buf.readUInt16LE(p + 30) + buf.readUInt16LE(p + 32);
+  }
+  return names;
+}
+
+/* ------------------------------------------------------------------ xml */
+
+const XML_ENTITIES = { amp: "&", lt: "<", gt: ">", quot: '"', apos: "'" };
+
+/** Decode the five predefined entities plus numeric references. */
+function decodeXml(s) {
+  return s.replace(/&(#x?[0-9a-fA-F]+|[a-z]+);/g, (m, ref) => {
+    if (ref[0] === "#") {
+      const code = ref[1] === "x" || ref[1] === "X" ? parseInt(ref.slice(2), 16) : parseInt(ref.slice(1), 10);
+      return Number.isFinite(code) ? String.fromCodePoint(code) : m;
+    }
+    return XML_ENTITIES[ref] ?? m;
+  });
+}
+
+/** Text of every `<tag ...>…</tag>`, in document order. Self-closing tags yield nothing. */
+function tagTexts(xml, tag) {
+  const out = [];
+  const re = new RegExp(`<${tag}(?:\\s[^>]*)?>([\\s\\S]*?)</${tag}>`, "g");
+  let m;
+  while ((m = re.exec(xml)) !== null) out.push(m[1]);
+  return out;
+}
+

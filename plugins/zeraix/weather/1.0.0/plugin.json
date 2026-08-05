@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/weather",
+  "version": "1.0.0",
+  "name": "Weather",
+  "description": "Current conditions and forecasts for anywhere in the world, from the Open-Meteo public API. No account and no API key.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/weather",
+  "providers": {
+    "openmeteo": {
+      "kind": "mcp-stdio",
+      "tier": "sandboxed",
+      "runtime": "node",
+      "entry": "server/index.js",
+      "permissions": {
+        "network": [
+          "api.open-meteo.com",
+          "geocoding-api.open-meteo.com"
+        ]
+      }
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "weather_current",
+      "name": "Current weather",
+      "description": "Current temperature, wind, humidity and conditions for a place or coordinates.",
+      "module": "reading",
+      "provider": "openmeteo"
+    },
+    {
+      "type": "tool",
+      "id": "weather_forecast",
+      "name": "Forecast",
+      "description": "Daily forecast up to 16 days: high, low, precipitation and conditions.",
+      "module": "reading",
+      "provider": "openmeteo"
+    },
+    {
+      "type": "tool",
+      "id": "weather_geocode",
+      "name": "Find a place",
+      "description": "Resolve a place name to coordinates, country and timezone. Use when a name is ambiguous.",
+      "module": "reading",
+      "provider": "openmeteo"
+    },
+    {
+      "type": "skill",
+      "id": "weather_reporting",
+      "name": "Reporting weather",
+      "description": "How to answer weather questions well: resolve ambiguous places, respect units, and never state a forecast more precisely than the data supports.",
+      "module": "guidance",
+      "path": "skill.md"
+    }
+  ]
+}

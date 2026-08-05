@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/xlsx-tools",
+  "version": "1.0.0",
+  "name": "Excel Spreadsheets",
+  "description": "Read Excel .xlsx workbooks: list sheets, read rows as typed values so totals can be checked, or render a sheet as a Markdown table.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/xlsx-tools",
+  "providers": {
+    "xlsx": {
+      "kind": "mcp-stdio",
+      "tier": "sandboxed",
+      "runtime": "node",
+      "entry": "server/index.js",
+      "permissions": {
+        "filesystem": [
+          "$WORKSPACE"
+        ]
+      }
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "xlsx_sheets",
+      "name": "List sheets",
+      "description": "List every sheet with its row and column counts.",
+      "module": "reading",
+      "provider": "xlsx"
+    },
+    {
+      "type": "tool",
+      "id": "xlsx_read_sheet",
+      "name": "Read sheet",
+      "description": "Read a sheet as rows of typed cell values; numbers stay numbers.",
+      "module": "reading",
+      "provider": "xlsx"
+    },
+    {
+      "type": "tool",
+      "id": "xlsx_to_markdown",
+      "name": "Sheet to Markdown",
+      "description": "Render a sheet as a Markdown table.",
+      "module": "reading",
+      "provider": "xlsx"
+    },
+    {
+      "type": "skill",
+      "id": "excel_spreadsheets",
+      "name": "Working with Excel spreadsheets",
+      "description": "How to read .xlsx workbooks correctly — shared strings, sparse rows, cached formula values — including a dependency-free fallback.",
+      "module": "guidance",
+      "path": "skill.md"
+    }
+  ]
+}
