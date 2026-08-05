@@ -19,3 +19,23 @@ can still use something a *lagging* client does not implement. That case is what
 rules in §7 are for — an older client drops the capability it does not understand and installs the
 rest. Validating against the oldest supported client instead would be stricter, and would hold the
 registry back to the least-updated user in the field; it is not worth that.
+
+## Before any release has the schema
+
+There is a bootstrap window where the rule above cannot be satisfied: the latest release predates
+`electron/plugins/manifest.mjs`, so the checkout resolves to a tag that has nothing to validate with,
+and both workflows fail on purpose.
+
+Set `APP_REF` to `main` to get through it:
+
+```bash
+gh variable set APP_REF --body main --repo zeraix/registry
+```
+
+**Delete the variable once a release contains the schema.** Leaving it pinned to `main` is the exact
+failure this file exists to prevent, and it fails silently — manifests get accepted that every
+shipped client skips, reported as a pass.
+
+Neither workflow falls back to `main` by itself, and neither skips validation when the validator is
+absent. Both would turn a red check into a green one that verified nothing, and since feeds are
+unsigned (design doc §5.1) review is the only gate there is.

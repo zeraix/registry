@@ -59,9 +59,20 @@ jobs:
       - name: Check the shared validator is present
         run: |
           if [ ! -f .app/electron/plugins/manifest.mjs ]; then
-            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no electron/plugins/manifest.mjs."
-            echo "::error::That release predates the plugin schema. Ship a release containing it, or set"
-            echo "::error::the APP_REF variable to a ref that has it."
+            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no electron/plugins/manifest.mjs,"
+            echo "::error::so there is nothing to validate submissions against."
+            echo "::error::"
+            echo "::error::Unblock now — point the checkout at a ref that has the schema:"
+            echo "::error::  gh variable set APP_REF --body main --repo ${{ github.repository }}"
+            echo "::error::  (or Settings -> Secrets and variables -> Actions -> Variables -> APP_REF = main)"
+            echo "::error::"
+            echo "::error::Then undo it: once a zeraix/zeraix release contains the schema, delete APP_REF so"
+            echo "::error::the checkout goes back to the latest release. Validating against main accepts"
+            echo "::error::manifests that shipped clients skip — see .github/workflows/_app-checkout.md."
+            echo "::error::"
+            echo "::error::This does not fall back to main on its own, and does not skip validation: feeds"
+            echo "::error::are unsigned, so review is the only gate, and a green check that checked nothing"
+            echo "::error::is worse than a red one."
             exit 1
           fi
 
