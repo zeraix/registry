@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "name": "Monthly report",
+  "description": "On the first working day of the month, collect the previous month's spreadsheets, build the report document, and export it to PDF for review.",
+  "triggers": [
+    { "type": "cron", "expression": "0 9 1 * *" },
+    { "type": "manual" }
+  ],
+  "nodes": [
+    {
+      "id": "collect",
+      "name": "Collect last month's sheets",
+      "runtime": "shell",
+      "command": "ls -1 $WORKSPACE/finance/$(date -d 'last month' +%Y-%m)/*.xlsx",
+      "timeoutMs": 30000,
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "summarize",
+      "name": "Summarize each sheet",
+      "runtime": "mcp",
+      "tool": "xlsx_query",
+      "forEach": "run://collect/files",
+      "maxItems": 40,
+      "retry": { "attempts": 2 },
+      "timeoutMs": 120000,
+      "position": { "x": 240, "y": 0 }
+    },
+    {
+      "id": "draft",
+      "name": "Draft the report",
+      "runtime": "agent",
+      "skill": "office_formatting",
+      "inputs": [{ "key": "sections", "ref": "run://summarize/rows" }],
+      "timeoutMs": 300000,
+      "position": { "x": 480, "y": 0 }
+    },
+    {
+      "id": "review",
+      "name": "Approve before it leaves the machine",
+      "runtime": "agent",
+      "subagent": "doc_reviewer",
+      "requiresApproval": true,
+      "approvalTimeoutMs": 172800000,
+      "onApprovalTimeout": "reject",
+      "position": { "x": 720, "y": 0 }
+    },
+    {
+      "id": "export",
+      "name": "Export to PDF",
+      "runtime": "mcp",
+      "tool": "convert_to_pdf",
+      "timeoutMs": 120000,
+      "position": { "x": 960, "y": 0 }
+    }
+  ],
+  "edges": [
+    { "from": "collect", "to": "summarize" },
+    { "from": "summarize", "to": "draft" },
+    { "from": "draft", "to": "review" },
+    { "from": "review", "to": "export" }
+  ]
+}

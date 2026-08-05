@@ -65,7 +65,20 @@ jobs:
             exit 1
           fi
 
-      # Third-party submissions only. plugins/zeraix/* is generated at publish time from the app's
-      # src/skills, so it is not present here and does not need to be.
+      # The generated built-in skills are not present here — publish.yml materializes those from the
+      # app's src/skills. Hand-authored official plugins (plugins/zeraix/office-suite) ARE committed
+      # and do appear.
+      #
+      # Which is why the reserved-publisher gate is keyed on where the pull request came from: a fork
+      # may not claim "zeraix", and a branch on this repo is a maintainer publishing an official
+      # plugin and may. A fork cannot influence this value — it is computed by Actions, not read from
+      # the submission.
       - name: Validate manifests
-        run: node .app/scripts/build-registry-index.mjs --root . --check
+        env:
+          FROM_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+        run: |
+          if [ "$FROM_FORK" = "true" ]; then
+            node .app/scripts/build-registry-index.mjs --root . --check
+          else
+            node .app/scripts/build-registry-index.mjs --root . --check --allow-reserved
+          fi

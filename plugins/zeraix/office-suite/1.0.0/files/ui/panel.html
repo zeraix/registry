@@ -1,0 +1,91 @@
+<!--
+  Spreadsheet preview panel.
+
+  Loaded into a sandboxed iframe with a locked CSP and no node integration
+  (design doc §4.3), so this file may not fetch, may not load an external
+  script, style or font, and cannot reach the host DOM. It talks to the app
+  over postMessage only.
+
+  `ui` is the highest-risk capability type in the schema: it renders inside the
+  renderer and could otherwise impersonate the app's own chrome, including the
+  install consent sheet. It is deliberately NOT in IMPLEMENTED_CAPABILITY_TYPES,
+  so this file installs and sits inert until that lands.
+-->
+<main id="root" hidden>
+  <table id="grid"><thead><tr id="head"></tr></thead><tbody id="body"></tbody></table>
+</main>
+<p id="empty">Select a sheet to preview it.</p>
+
+<style>
+  :root { color-scheme: light dark; font: 13px/1.5 system-ui, sans-serif; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { border: 1px solid color-mix(in srgb, currentColor 20%, transparent); padding: 4px 8px; text-align: left; }
+  th { position: sticky; top: 0; background: Canvas; cursor: pointer; user-select: none; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  #empty:only-child { opacity: 0.6; }
+</style>
+
+<script>
+  // The host posts { type: "sheet", columns: string[], rows: (string|number)[][] }.
+  // Nothing is fetched and nothing is evaluated: every value below reaches the DOM
+  // through textContent, so a cell containing markup stays a cell containing markup.
+  let sort = { column: -1, ascending: true };
+  let sheet = null;
+
+  addEventListener("message", (event) => {
+    if (event.data?.type !== "sheet") return;
+    sheet = { columns: event.data.columns ?? [], rows: event.data.rows ?? [] };
+    sort = { column: -1, ascending: true };
+    render();
+  });
+
+  function render() {
+    const root = document.getElementById("root");
+    const empty = document.getElementById("empty");
+    if (!sheet || sheet.columns.length === 0) {
+      root.hidden = true;
+      empty.hidden = false;
+      return;
+    }
+    root.hidden = false;
+    empty.hidden = true;
+
+    const head = document.getElementById("head");
+    head.replaceChildren();
+    sheet.columns.forEach((label, i) => {
+      const th = document.createElement("th");
+      th.textContent = label;
+      th.onclick = () => {
+        sort = { column: i, ascending: sort.column === i ? !sort.ascending : true };
+        render();
+      };
+      head.append(th);
+    });
+
+    const rows = [...sheet.rows];
+    if (sort.column >= 0) {
+      const dir = sort.ascending ? 1 : -1;
+      rows.sort((a, b) => {
+        const x = a[sort.column], y = b[sort.column];
+        // Numbers compare as numbers; anything else falls back to locale text order.
+        if (typeof x === "number" && typeof y === "number") return (x - y) * dir;
+        return String(x ?? "").localeCompare(String(y ?? "")) * dir;
+      });
+    }
+
+    const body = document.getElementById("body");
+    body.replaceChildren();
+    for (const row of rows) {
+      const tr = document.createElement("tr");
+      for (const value of row) {
+        const td = document.createElement("td");
+        if (typeof value === "number") td.className = "num";
+        td.textContent = value ?? "";
+        tr.append(td);
+      }
+      body.append(tr);
+    }
+  }
+
+  parent.postMessage({ type: "ready", capability: "sheet_preview" }, "*");
+</script>

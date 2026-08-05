@@ -1,0 +1,205 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/office-suite",
+  "version": "1.0.0",
+  "name": "Office Suite",
+  "description": "Read, write and convert Word, Excel and PowerPoint files, extract text from scanned documents, and draft documents in your organisation's house style.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/office-suite",
+  "pricing": {
+    "model": "free"
+  },
+  "providers": {
+    "docs": {
+      "kind": "mcp-stdio",
+      "tier": "sandboxed",
+      "runtime": "node",
+      "entry": "server/index.js",
+      "args": [
+        "--stdio"
+      ],
+      "permissions": {
+        "filesystem": [
+          "$WORKSPACE",
+          "$TMP/office"
+        ]
+      }
+    },
+    "cloud": {
+      "kind": "mcp-http",
+      "tier": "sandboxed",
+      "url": "https://api.zeraix.com/office/mcp",
+      "permissions": {
+        "network": [
+          "api.zeraix.com"
+        ],
+        "credentials": [
+          "office_api_token"
+        ]
+      },
+      "needs": [
+        {
+          "key": "OFFICE_API_TOKEN",
+          "prompt": "API token for the Office cloud service",
+          "secret": true
+        }
+      ]
+    },
+    "convert": {
+      "kind": "process",
+      "tier": "sandboxed",
+      "runtime": "python",
+      "entry": "bin/convert.py",
+      "args": [
+        "--quiet"
+      ],
+      "permissions": {
+        "filesystem": [
+          "$WORKSPACE",
+          "$TMP/office"
+        ]
+      }
+    },
+    "gallery": {
+      "kind": "http",
+      "tier": "sandboxed",
+      "url": "https://api.zeraix.com/office/templates/v1",
+      "permissions": {
+        "network": [
+          "*.zeraix.com"
+        ]
+      },
+      "needs": [
+        {
+          "key": "TEMPLATE_GALLERY_LOCALE",
+          "prompt": "Locale for template descriptions, e.g. en-GB",
+          "secret": false
+        }
+      ]
+    },
+    "native": {
+      "kind": "builtin",
+      "tier": "host",
+      "permissions": {}
+    },
+    "bundled": {
+      "kind": "text",
+      "tier": "text",
+      "permissions": {}
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "docx_extract",
+      "name": "Extract document text",
+      "description": "Read a .docx and return its text with heading structure preserved.",
+      "module": "documents",
+      "provider": "docs"
+    },
+    {
+      "type": "tool",
+      "id": "docx_write",
+      "name": "Write document",
+      "description": "Create or update a .docx from Markdown, keeping the template's styles.",
+      "module": "documents",
+      "provider": "docs"
+    },
+    {
+      "type": "tool",
+      "id": "xlsx_query",
+      "name": "Query spreadsheet",
+      "description": "Run a SQL-like query over a sheet and return matching rows.",
+      "module": "spreadsheets",
+      "provider": "docs"
+    },
+    {
+      "type": "tool",
+      "id": "convert_to_pdf",
+      "name": "Convert to PDF",
+      "description": "Convert a document to PDF, preferring the installed office application for exact fidelity.",
+      "module": "conversion",
+      "bind": [
+        {
+          "provider": "native",
+          "when": "host.hasOfficeInstalled"
+        },
+        {
+          "provider": "convert"
+        }
+      ]
+    },
+    {
+      "type": "model",
+      "id": "ocr_reader",
+      "name": "Scanned document OCR",
+      "description": "Vision model that turns scans and photographed pages into text.",
+      "module": "extraction",
+      "provider": "cloud"
+    },
+    {
+      "type": "resource",
+      "id": "template_gallery",
+      "name": "Template gallery",
+      "description": "Browsable catalogue of letter, report and deck templates.",
+      "module": "templates",
+      "provider": "gallery"
+    },
+    {
+      "type": "resource",
+      "id": "style_tokens",
+      "name": "House style tokens",
+      "description": "Fonts, colours and margins the house style expects.",
+      "module": "templates",
+      "provider": "bundled"
+    },
+    {
+      "type": "skill",
+      "id": "office_formatting",
+      "name": "Office Formatting",
+      "description": "How to structure and format a document, spreadsheet or deck so it survives review.",
+      "module": "writing",
+      "path": "skill.md"
+    },
+    {
+      "type": "prompt",
+      "id": "meeting_minutes",
+      "name": "Meeting minutes",
+      "description": "Turn a raw transcript into minutes with decisions and owners pulled out.",
+      "module": "writing",
+      "path": "prompt.md"
+    },
+    {
+      "type": "memory",
+      "id": "house_style",
+      "name": "House style",
+      "description": "Starter house-style conventions — voice, date format, terminology — to edit for your organisation.",
+      "module": "writing",
+      "path": "memory.md"
+    },
+    {
+      "type": "subagent",
+      "id": "doc_reviewer",
+      "name": "Document reviewer",
+      "description": "Reviews a draft against the house style and returns findings only.",
+      "module": "agents",
+      "path": "subagent.md"
+    },
+    {
+      "type": "workflow",
+      "id": "monthly_report",
+      "name": "Monthly report",
+      "description": "Collect the month's spreadsheets, build the report and export it to PDF.",
+      "module": "automation",
+      "path": "workflow.json"
+    },
+    {
+      "type": "ui",
+      "id": "sheet_preview",
+      "name": "Spreadsheet preview",
+      "description": "Renders a sheet as a sortable table in a side panel.",
+      "module": "viewers",
+      "path": "ui/panel.html"
+    }
+  ]
+}

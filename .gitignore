@@ -1,8 +1,9 @@
-# Build output: regenerated on every publish, signed with the release key. Never committed —
-# a stale signed feed in the repo is a rollback waiting to be served.
+# Build output: regenerated on every publish. Never committed — a stale feed in the repo is a
+# rollback waiting to be served. (This is also why the publish workflow passes --sequence from
+# run_number: with no previous dist/ to count from, the builder cannot derive one.)
 dist/
 
-# The app's built-in skills, regenerated from src/skills/*.md in the app repo on every publish.
-# Committing them would put a second copy of each skill under version control, and the two would
-# drift the first time one is edited.
-plugins/zeraix/
+# The app's built-in skills are ALSO not committed — but that rule lives in plugins/zeraix/.gitignore,
+# which the exporter regenerates with one entry per generated skill. It is deliberately not a
+# wildcard over the namespace: hand-authored official plugins (zeraix/office-suite) live beside the
+# generated ones and must be committed, and a namespace-wide ignore silently swallowed them.

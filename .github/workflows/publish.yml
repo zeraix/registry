@@ -1,12 +1,13 @@
 name: Publish feeds
 
-# Merging is publishing (design doc §5.4). This builds the index and kill-list, signs them with the
-# RELEASE key, and uploads them with the root-signed delegation that authorizes that key.
+# Merging is publishing (design doc §5.4). This builds the index and kill-list and uploads them to
+# the API origin the app fetches from.
 #
-# The root key is not here and must never be. It lives on an offline machine and signs only
-# keys.json, which is committed to this repo as a plain (secret-free) artifact. A compromise of this
-# workflow can publish signed feeds; it cannot mint a new key or survive revocation. See §5.1 for
-# where that bound stops.
+# Nothing is signed: this repo's review history is the provenance (§5.1). The consequence is worth
+# being explicit about — write access to this repo, or to the publish endpoint, is write access to
+# what the marketplace offers. What it does not grant is the ability to alter a plugin's bytes
+# without also changing its entry here, because the index pins every artifact by sha512 and clients
+# verify before writing.
 on:
   push:
     branches: [main]
@@ -72,83 +73,78 @@ jobs:
       - name: Materialize built-in skills
         run: node .app/scripts/export-builtin-skills.mjs --out .
 
-      # No signing yet: a manifest problem should fail before the key is touched.
+      # A manifest problem should fail before anything is built or uploaded.
+      #
+      # --allow-reserved because this runs on merged main: it has just materialized the official
+      # built-in skills as plugins/zeraix/*, and the hand-authored official plugins beside them were
+      # already reviewed on the way in (validate.yml refuses a reserved publisher from a fork).
       - name: Validate everything
-        run: node .app/scripts/build-registry-index.mjs --root . --check
+        run: node .app/scripts/build-registry-index.mjs --root . --check --allow-reserved
 
       # Bootstrap vs misconfigured — a distinction worth making, because they deserve opposite
-      # outcomes. Before the key ceremony has happened at all, validation-only is the honest result
-      # and a red X on every merge would just train everyone to ignore this workflow. Once signing is
-      # half set up, silence is dangerous: it means feeds nobody can verify, or a key with nothing
-      # authorizing it. That fails loudly.
-      - name: Assess signing configuration
+      # outcomes. Before the publish origin exists, validation-only is the honest result and a red X
+      # on every merge would just train everyone to ignore this workflow. Half-configured is
+      # dangerous instead: feeds built with real artifact URLs that go nowhere look exactly like a
+      # successful publish from the outside. That fails loudly.
+      - name: Assess publish configuration
         id: cfg
         env:
-          REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
           PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
+          PUBLISH_URL: ${{ vars.PUBLISH_URL }}
         run: |
-          have_key=0; have_delegation=0
-          [ -n "$REGISTRY_SIGNING_KEY" ] && [ -n "$PLUGIN_BASE_URL" ] && have_key=1
-          [ -f keys.json ] && have_delegation=1
-
-          if [ "$have_key" = "0" ] && [ "$have_delegation" = "0" ]; then
-            echo "::notice::Registry not signed yet — validated $(ls -d plugins/*/* 2>/dev/null | wc -l) plugin(s) and stopped."
-            echo "::notice::To publish: generate the root key offline, embed it in the client, ship a"
-            echo "::notice::release, then add REGISTRY_SIGNING_KEY + PLUGIN_BASE_URL and commit a"
-            echo "::notice::root-signed keys.json. See the README setup checklist."
-            echo "sign=false" >> "$GITHUB_OUTPUT"
+          if [ -z "$PLUGIN_BASE_URL" ] && [ -z "$PUBLISH_URL" ]; then
+            echo "::notice::No publish origin configured — validated $(ls -d plugins/*/* 2>/dev/null | wc -l) plugin(s) and stopped."
+            echo "::notice::To publish: stand up the publish endpoint, then set the PLUGIN_BASE_URL and"
+            echo "::notice::PUBLISH_URL variables and the PUBLISH_TOKEN secret. See the README checklist."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-
-          if [ "$have_delegation" = "0" ]; then
-            echo "::error::A release key is configured but keys.json is missing. Feeds signed with it"
-            echo "::error::would be rejected by every client. Produce the delegation offline with"
-            echo "::error::scripts/sign-delegation.mjs and commit it."
+          if [ -z "$PLUGIN_BASE_URL" ]; then
+            echo "::error::PUBLISH_URL is set but PLUGIN_BASE_URL is not, so the index would carry no"
+            echo "::error::usable artifact URLs. Set both, or neither."
             exit 1
           fi
-          if [ "$have_key" = "0" ]; then
-            echo "::error::keys.json is present but signing is not configured. Set REGISTRY_SIGNING_KEY"
-            echo "::error::and PLUGIN_BASE_URL, or the delegation authorizes nothing."
+          if [ -z "$PUBLISH_URL" ]; then
+            echo "::error::PLUGIN_BASE_URL is set but PUBLISH_URL is not. Feeds would be built with real"
+            echo "::error::artifact URLs and uploaded nowhere — indistinguishable from a successful publish."
             exit 1
           fi
-          echo "sign=true" >> "$GITHUB_OUTPUT"
+          echo "publish=true" >> "$GITHUB_OUTPUT"
 
-      - name: Build and sign
-        if: steps.cfg.outputs.sign == 'true'
+      - name: Build feeds
+        if: steps.cfg.outputs.publish == 'true'
         env:
-          # Private half of the RELEASE key: paste the PEM straight in, or base64 of it. Rotate by
-          # issuing a new delegation; no client release is needed.
-          REGISTRY_SIGNING_KEY: ${{ secrets.REGISTRY_SIGNING_KEY }}
           # Where plugin artifacts are served from; the index derives per-plugin URLs beneath it.
           PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
         run: |
-          # The key id comes from keys.json — the delegation already says which key may sign, and a
-          # second copy in a CI variable is one more thing to keep in step.
-          node .app/scripts/build-registry-index.mjs --root . --base-url "$PLUGIN_BASE_URL"
+          # --sequence is NOT optional here. dist/ is gitignored, so a fresh checkout has no previous
+          # build to count from and the builder would emit sequence 1 on every publish — a number
+          # that never advances is a client-side rollback check that never fires. run_number survives
+          # the checkout and only ever climbs.
+          node .app/scripts/build-registry-index.mjs --root . --allow-reserved \
+            --base-url "$PLUGIN_BASE_URL" --sequence "${{ github.run_number }}"
 
       # Feeds and artifacts are served from our own API origin (design doc §5.2) — no object storage.
+      # The registry repo stays the source of truth; this is the mirror that makes it reachable from
+      # networks where raw GitHub is not.
       #
-      # TODO: this endpoint does not exist yet. It needs to accept dist/{index,killlist,keys}.json
-      # plus the plugin files under plugins/**/files/, and serve them at
-      #   <api origin>/plugins/{index,killlist,keys}.json
+      # TODO: this endpoint does not exist yet. It needs to accept dist/{index,killlist}.json plus
+      # the plugin files under plugins/**/files/, and serve them at
+      #   <api origin>/plugins/{index,killlist}.json
       #   <PLUGIN_BASE_URL>/<publisher>/<name>/<version>/<file>
-      # Everything it serves is either signed or hash-pinned by something signed, so the endpoint
-      # needs authentication but does not need to be trusted for integrity.
+      # Since the feeds are unsigned, this endpoint IS the integrity boundary for the catalogue:
+      # whatever it serves is what clients believe. Artifacts remain hash-pinned by the index.
       - name: Upload to the API origin
-        if: steps.cfg.outputs.sign == 'true'
+        if: steps.cfg.outputs.publish == 'true'
         env:
           PUBLISH_URL: ${{ vars.PUBLISH_URL }}
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
         run: |
-          if [ -z "$PUBLISH_URL" ]; then
-            echo "::warning::PUBLISH_URL is not set — built and signed, but nothing was uploaded."
-            exit 0
-          fi
           echo "::error::The publish endpoint is not implemented yet. Wire this step to $PUBLISH_URL."
           exit 1
 
       - name: Upload feeds as an artifact
-        if: steps.cfg.outputs.sign == 'true'
+        if: steps.cfg.outputs.publish == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: registry-feeds
