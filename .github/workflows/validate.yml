@@ -54,31 +54,31 @@ jobs:
         with:
           node-version: 22
 
-      # A missing builder means the app release predates the plugin tooling — a MODULE_NOT_FOUND
+      # A missing validator means the app release predates the plugin schema — a MODULE_NOT_FOUND
       # stack trace does not say that, and this is the first thing anyone will hit.
-      - name: Check the shared tooling is present
+      - name: Check the shared validator is present
         run: |
-          if [ ! -f .app/scripts/build-registry-index.mjs ]; then
-            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no scripts/build-registry-index.mjs."
-            echo "::error::That release predates the plugin tooling. Ship a release containing it, or set"
+          if [ ! -f .app/electron/plugins/manifest.mjs ]; then
+            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no electron/plugins/manifest.mjs."
+            echo "::error::That release predates the plugin schema. Ship a release containing it, or set"
             echo "::error::the APP_REF variable to a ref that has it."
             exit 1
           fi
 
-      # The generated built-in skills are not present here — publish.yml materializes those from the
-      # app's src/skills. Hand-authored official plugins (plugins/zeraix/office-suite) ARE committed
-      # and do appear.
+      # Checks only. Nothing is built here and nothing is built anywhere in this repo: a plugin is a
+      # committed directory, and assembling the catalogue is the publish endpoint's job. This step
+      # exists to fail a submission a client would reject, while a human is still looking at it.
       #
-      # Which is why the reserved-publisher gate is keyed on where the pull request came from: a fork
-      # may not claim "zeraix", and a branch on this repo is a maintainer publishing an official
-      # plugin and may. A fork cannot influence this value — it is computed by Actions, not read from
-      # the submission.
-      - name: Validate manifests
+      # The reserved-publisher gate is keyed on where the pull request came from: a fork may not
+      # claim "zeraix", and a branch on this repo is a maintainer publishing an official plugin and
+      # may. A fork cannot influence this value — Actions computes it, it is not read from the
+      # submission.
+      - name: Validate submissions
         env:
           FROM_FORK: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
         run: |
           if [ "$FROM_FORK" = "true" ]; then
-            node .app/scripts/build-registry-index.mjs --root . --check
+            node .github/scripts/validate-submissions.mjs --root . --app .app
           else
-            node .app/scripts/build-registry-index.mjs --root . --check --allow-reserved
+            node .github/scripts/validate-submissions.mjs --root . --app .app --allow-reserved
           fi

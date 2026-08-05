@@ -57,13 +57,13 @@ jobs:
         with:
           node-version: 22
 
-      # A missing builder means the app release predates the plugin tooling — a MODULE_NOT_FOUND
+      # A missing validator means the app release predates the plugin schema — a MODULE_NOT_FOUND
       # stack trace does not say that, and this is the first thing anyone will hit.
-      - name: Check the shared tooling is present
+      - name: Check the shared validator is present
         run: |
-          if [ ! -f .app/scripts/build-registry-index.mjs ]; then
-            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no scripts/build-registry-index.mjs."
-            echo "::error::That release predates the plugin tooling. Ship a release containing it, or set"
+          if [ ! -f .app/electron/plugins/manifest.mjs ]; then
+            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no electron/plugins/manifest.mjs."
+            echo "::error::That release predates the plugin schema. Ship a release containing it, or set"
             echo "::error::the APP_REF variable to a ref that has it."
             exit 1
           fi
@@ -73,67 +73,50 @@ jobs:
       - name: Materialize built-in skills
         run: node .app/scripts/export-builtin-skills.mjs --out .
 
-      # A manifest problem should fail before anything is built or uploaded.
-      #
-      # --allow-reserved because this runs on merged main: it has just materialized the official
-      # built-in skills as plugins/zeraix/*, and the hand-authored official plugins beside them were
-      # already reviewed on the way in (validate.yml refuses a reserved publisher from a fork).
+      # Re-check on merged main before anything is uploaded. --allow-reserved because this has just
+      # materialized the official built-in skills as plugins/zeraix/*, and the hand-authored official
+      # plugins beside them were already reviewed on the way in (validate.yml refuses a reserved
+      # publisher from a fork).
       - name: Validate everything
-        run: node .app/scripts/build-registry-index.mjs --root . --check --allow-reserved
+        run: node .github/scripts/validate-submissions.mjs --root . --app .app --allow-reserved
 
       # Bootstrap vs misconfigured — a distinction worth making, because they deserve opposite
-      # outcomes. Before the publish origin exists, validation-only is the honest result and a red X
-      # on every merge would just train everyone to ignore this workflow. Half-configured is
-      # dangerous instead: feeds built with real artifact URLs that go nowhere look exactly like a
-      # successful publish from the outside. That fails loudly.
+      # outcomes. Before the publish endpoint exists, validation-only is the honest result and a red X
+      # on every merge would just train everyone to ignore this workflow.
       - name: Assess publish configuration
         id: cfg
         env:
-          PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
           PUBLISH_URL: ${{ vars.PUBLISH_URL }}
         run: |
-          if [ -z "$PLUGIN_BASE_URL" ] && [ -z "$PUBLISH_URL" ]; then
-            echo "::notice::No publish origin configured — validated $(ls -d plugins/*/* 2>/dev/null | wc -l) plugin(s) and stopped."
-            echo "::notice::To publish: stand up the publish endpoint, then set the PLUGIN_BASE_URL and"
-            echo "::notice::PUBLISH_URL variables and the PUBLISH_TOKEN secret. See the README checklist."
+          if [ -z "$PUBLISH_URL" ]; then
+            echo "::notice::No publish endpoint configured — validated $(ls -d plugins/*/* 2>/dev/null | wc -l) plugin(s) and stopped."
+            echo "::notice::To publish: stand up the endpoint, then set the PUBLISH_URL variable and the"
+            echo "::notice::PUBLISH_TOKEN secret. See the README checklist."
             echo "publish=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          if [ -z "$PLUGIN_BASE_URL" ]; then
-            echo "::error::PUBLISH_URL is set but PLUGIN_BASE_URL is not, so the index would carry no"
-            echo "::error::usable artifact URLs. Set both, or neither."
-            exit 1
-          fi
-          if [ -z "$PUBLISH_URL" ]; then
-            echo "::error::PLUGIN_BASE_URL is set but PUBLISH_URL is not. Feeds would be built with real"
-            echo "::error::artifact URLs and uploaded nowhere — indistinguishable from a successful publish."
-            exit 1
-          fi
           echo "publish=true" >> "$GITHUB_OUTPUT"
 
-      - name: Build feeds
-        if: steps.cfg.outputs.publish == 'true'
-        env:
-          # Where plugin artifacts are served from; the index derives per-plugin URLs beneath it.
-          PLUGIN_BASE_URL: ${{ vars.PLUGIN_BASE_URL }}
-        run: |
-          # --sequence is NOT optional here. dist/ is gitignored, so a fresh checkout has no previous
-          # build to count from and the builder would emit sequence 1 on every publish — a number
-          # that never advances is a client-side rollback check that never fires. run_number survives
-          # the checkout and only ever climbs.
-          node .app/scripts/build-registry-index.mjs --root . --allow-reserved \
-            --base-url "$PLUGIN_BASE_URL" --sequence "${{ github.run_number }}"
-
-      # Feeds and artifacts are served from our own API origin (design doc §5.2) — no object storage.
-      # The registry repo stays the source of truth; this is the mirror that makes it reachable from
-      # networks where raw GitHub is not.
+      # Upload the committed tree. There is no build step: this repo holds plugins as directories,
+      # and the endpoint is what turns them into a catalogue (design doc §5.2, §5.4).
       #
-      # TODO: this endpoint does not exist yet. It needs to accept dist/{index,killlist}.json plus
-      # the plugin files under plugins/**/files/, and serve them at
-      #   <api origin>/plugins/{index,killlist}.json
-      #   <PLUGIN_BASE_URL>/<publisher>/<name>/<version>/<file>
-      # Since the feeds are unsigned, this endpoint IS the integrity boundary for the catalogue:
-      # whatever it serves is what clients believe. Artifacts remain hash-pinned by the index.
+      # TODO: this endpoint does not exist yet. What it receives is plugins/**/plugin.json plus
+      # plugins/**/files/**, and killlist.json. What it owes the client, at
+      # <api origin>/plugins/{index,killlist}.json, is:
+      #
+      #   1. sha512 per artifact, computed from the bytes it received and embedded in the manifest.
+      #      Submissions omit the digests deliberately, so the endpoint is the only thing that can
+      #      produce them. Without this every install fails its hash check.
+      #   2. one document embedding every manifest, so one fetch is one coherent view of the
+      #      catalogue and there is no window where the list and its entries disagree.
+      #   3. a monotonic `sequence` on each feed, higher than the last published. Clients refuse
+      #      anything lower, which is what stops a stale kill-list being replayed to un-revoke a
+      #      plugin — the one protection that does not depend on the origin being honest. A counter
+      #      that never advances silently turns that check into a no-op.
+      #   4. per-plugin artifact URLs the client can fetch over https.
+      #
+      # Since the feeds are unsigned (§5.1), this endpoint IS the integrity boundary for the
+      # catalogue: whatever it serves is what clients believe.
       - name: Upload to the API origin
         if: steps.cfg.outputs.publish == 'true'
         env:
@@ -141,13 +124,6 @@ jobs:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
         run: |
           echo "::error::The publish endpoint is not implemented yet. Wire this step to $PUBLISH_URL."
+          echo "::error::It must hash the artifacts, embed the manifests, and assign a monotonic"
+          echo "::error::sequence — see the comment above this step for the full contract."
           exit 1
-
-      - name: Upload feeds as an artifact
-        if: steps.cfg.outputs.publish == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: registry-feeds
-          path: dist/
-          if-no-files-found: error
-          retention-days: 30

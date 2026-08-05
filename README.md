@@ -7,11 +7,12 @@ an app release (see [plugin-marketplace-design.md](../docs/plugin-marketplace-de
 ## What lives here
 
 ```
-plugins/<publisher>/<name>/<version>/plugin.json   a submitted manifest (sha512 omitted — CI computes it)
+plugins/<publisher>/<name>/<version>/plugin.json   a submitted manifest (sha512 omitted — see below)
 plugins/<publisher>/<name>/<version>/files/…       its artifacts
 killlist.json                                      withdrawn plugins, hand-maintained
-dist/                                              build output — generated, never committed
 ```
+
+Nothing is generated here and there is no build output. What is committed is what gets published.
 
 The app's **built-in skills** are not committed: the publish workflow regenerates them from
 `src/skills/*.md` in the app repo on every run, so there is one copy of each skill and the two cannot
@@ -27,8 +28,9 @@ works from a fork. A human merges; merging is what publishes.
 
 **That is the entire process.** A plugin is a directory in this repository — adding one is a pull
 request, removing one is an entry in `killlist.json`. There is nothing to build, no tool to install,
-and no command to run: the index is assembled by CI from what is committed here. The app repository
-supplies the validator the workflows borrow, but a plugin author never touches it.
+and no command to run — not for you and not in CI. CI only *checks* your submission; the catalogue
+itself is assembled by the publish endpoint from what is committed here. The app repository supplies
+the validator the workflows borrow, but a plugin author never touches it.
 
 **Start from [`plugins/zeraix/office-suite/`](plugins/zeraix/office-suite/)** rather than from the
 schema. It is the official office plugin and doubles as the reference manifest: every structure the
@@ -42,10 +44,11 @@ pull request from a fork claiming one fails validation. Submit under your own na
 Rules the validator enforces, so they are worth knowing before you write the manifest:
 
 - The directory decides identity. `plugin.json`'s `id` must be `<you>/<name>` and its `version` must
-  match the directory, or the build fails.
-- **Do not hand-write `sha512`.** Ship the files; CI hashes them and injects the digests. A declared
-  hash that disagrees with the bytes is an error, because it means the manifest and the artifact came
-  from different builds.
+  match the directory, or validation fails.
+- **Do not hand-write `sha512`.** Ship the files; the publish endpoint computes the digests from the
+  bytes it receives. CI hashes them too, but only in memory so the validator has something to check —
+  it writes nothing. A declared hash that disagrees with the bytes is an error, because it means the
+  manifest and the artifact came from different sources.
 - Versions are immutable. Never edit a version that has been published — add a new one.
 - Anything a client would silently skip is an error here, not a warning. Publishing a capability no
   client can use is a mistake to catch in review.
@@ -96,10 +99,9 @@ Both feeds carry a monotonic `sequence`, and clients refuse anything below the o
 hold. That is what stops a stale kill-list being replayed to un-revoke a plugin, and it is the one
 protection that does not depend on the origin being honest.
 
-`dist/` is never committed, so a CI run has no previous build to count from. **The publish workflow
-passes `--sequence` from `github.run_number`**, which survives a fresh checkout and only ever climbs.
-Do not remove that argument: without it every publish is sequence 1, the number never advances, and
-the rollback check silently becomes a no-op.
+Nothing in this repository assigns it. **The publish endpoint owns the sequence**, and it must climb
+on every publish — a number that never advances turns the client's rollback check into a no-op, with
+no error anywhere to say so.
 
 ## Which app version validates submissions
 
@@ -109,26 +111,24 @@ would accept manifests that every shipped client skips, and report it as a pass.
 [`.github/workflows/_app-checkout.md`](.github/workflows/_app-checkout.md).
 
 Consequence worth knowing before the first publish: **the registry cannot publish until an app
-release contains the plugin tooling.** Until then, set the `APP_REF` repository variable to a branch
+release contains the plugin schema.** Until then, set the `APP_REF` repository variable to a branch
 or commit that has it (`main`, once the work is pushed) and clear it after the release ships.
 
-## Before the publish origin exists
+## Before the publish endpoint exists
 
-Publishing degrades rather than failing while the registry is being set up. With no `PLUGIN_BASE_URL`
+Publishing degrades rather than failing while the registry is being set up. With no `PUBLISH_URL`,
 the workflow validates every plugin, says so, and stops **green** — a red X on every merge would just
 train everyone to ignore it.
 
-A base URL with no `PUBLISH_URL` is different and fails loudly: it means feeds were built with real
-artifact URLs and then went nowhere, which looks exactly like a successful publish from the outside.
-
 ## Setup checklist
 
-0. Push the plugin tooling to `zeraix/zeraix` and cut a release containing it — or set `APP_REF` to a
-   ref that has it. The workflows fail with an explicit message if the tooling is missing.
-1. Stand up the publish endpoint (design doc §5.2 — still a TODO in `publish.yml`). It accepts
-   `dist/{index,killlist}.json` plus the artifacts under `plugins/**/files/`, and serves them at
-   `<api origin>/plugins/{index,killlist}.json` and `<PLUGIN_BASE_URL>/<publisher>/<name>/<version>/<file>`.
-2. Set the `PLUGIN_BASE_URL` and `PUBLISH_URL` repository variables and the `PUBLISH_TOKEN` secret.
+0. Push the plugin schema to `zeraix/zeraix` and cut a release containing it — or set `APP_REF` to a
+   ref that has it. The workflows fail with an explicit message if the validator is missing.
+1. Stand up the publish endpoint (design doc §5.2 — still a TODO in `publish.yml`). It receives the
+   committed `plugins/` tree and `killlist.json`, and owes the client four things nothing else can
+   supply: `sha512` per artifact computed from the bytes, one document embedding every manifest, a
+   monotonic feed `sequence`, and https artifact URLs. See the comment above the upload step.
+2. Set the `PUBLISH_URL` repository variable and the `PUBLISH_TOKEN` secret.
 3. Flip `PLUGINS_UI_ENABLED` in the app's `src/constants/App.ts` and ship a release. Until then the
    client never configures the registry and makes no plugin requests.
 
