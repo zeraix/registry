@@ -50,7 +50,7 @@ Also shown: `module` grouping (the consent sheet groups by it — "adds 3 docume
 
 ## Why the warnings are expected
 
-`build-registry-index.mjs --check` emits 17 warnings against this plugin, and every one is a
+CI reports 17 warnings against this plugin on every run, and every one is a
 reserved-but-not-yet-runnable notice:
 
 ```
@@ -84,15 +84,19 @@ unreferenced file is nearly always a rename someone missed.
 
 ## For submitters
 
-`zeraix` is a **reserved publisher**. A pull request from a fork adding anything under
-`plugins/zeraix/` fails validation by design: the namespace means "official" and the consent sheet
-presents it that way. Submit under your own publisher name and copy the shape from here.
+Adding a plugin means **adding a directory to this repository and opening a pull request**. That is
+the whole process. There is no build step you run, no tool to install, and nothing to generate:
+CI validates the manifest on your pull request, and merging is what publishes it. Removing a plugin
+is the same act in reverse — an entry in `killlist.json`, merged.
 
-```bash
-node <app>/scripts/build-registry-index.mjs --root . --check
-```
+Copy the shape from this directory, but not its publisher: `zeraix` is **reserved**, and a pull
+request from a fork adding anything under `plugins/zeraix/` fails validation by design. The namespace
+means "official" and the consent sheet presents it that way. Submit under your own publisher name.
 
-That is the same command CI runs on your pull request, against the app's latest release tag.
+Two things about this directory that are specific to it and should not be copied:
 
-This directory is committed even though its neighbours are not: `plugins/zeraix/.gitignore` lists
-only the built-in skills, which are regenerated from the app's `src/skills/*.md` on every publish.
+- It is committed even though its neighbours are not. `plugins/zeraix/.gitignore` lists only the
+  built-in skills, which are regenerated from the app's `src/skills/*.md` on every publish.
+- It omits `sha512` on every capability, as your submission should. CI computes the digests from the
+  bytes you ship and injects them — a hand-written digest is a transcription error waiting to break
+  an install for everyone.

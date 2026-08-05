@@ -25,6 +25,11 @@ committed normally.
 Open a pull request adding `plugins/<you>/<name>/<version>/`. CI validates it with no secrets, so it
 works from a fork. A human merges; merging is what publishes.
 
+**That is the entire process.** A plugin is a directory in this repository — adding one is a pull
+request, removing one is an entry in `killlist.json`. There is nothing to build, no tool to install,
+and no command to run: the index is assembled by CI from what is committed here. The app repository
+supplies the validator the workflows borrow, but a plugin author never touches it.
+
 **Start from [`plugins/zeraix/office-suite/`](plugins/zeraix/office-suite/)** rather than from the
 schema. It is the official office plugin and doubles as the reference manifest: every structure the
 schema defines — all six provider kinds, all nine capability types, and all three ways a capability
