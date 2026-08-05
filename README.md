@@ -103,16 +103,19 @@ Nothing in this repository assigns it. **The publish endpoint owns the sequence*
 on every publish — a number that never advances turns the client's rollback check into a no-op, with
 no error anywhere to say so.
 
-## Which app version validates submissions
+## Where the validator comes from
 
-Both workflows borrow the validator from `zeraix/zeraix` rather than vendoring a copy, and they pin
-that checkout to the app's **latest release tag** — not `main`. Validating against unreleased code
-would accept manifests that every shipped client skips, and report it as a pass. See
-[`.github/workflows/_app-checkout.md`](.github/workflows/_app-checkout.md).
+Both workflows borrow one file from `zeraix/zeraix` rather than vendoring a copy:
+`electron/plugins/manifest.mjs`, the client's own validator. That is what makes "CI passed" mean
+"clients will accept this" — two copies of the schema would drift, and then the green check would be
+telling you something it had not checked.
 
-Consequence worth knowing before the first publish: **the registry cannot publish until an app
-release contains the plugin schema.** Until then, set the `APP_REF` repository variable to a branch
-or commit that has it (`main`, once the work is pushed) and clear it after the release ships.
+They track `main`, with no version resolution of any kind. An earlier design resolved the app's
+latest *release* tag, which turned out to be the wrong trade twice over: it made CI **stricter** than
+the schema (rejecting manifests that newer clients accept, since an unknown capability type is an
+error in strict mode) while doing nothing about lagging clients, which already handle anything they
+do not recognise by skipping it (design doc §7). What it did reliably produce was a deadlock —
+nothing could publish until a release happened to contain the schema.
 
 ## Before the publish endpoint exists
 
@@ -122,8 +125,8 @@ train everyone to ignore it.
 
 ## Setup checklist
 
-0. Push the plugin schema to `zeraix/zeraix` and cut a release containing it — or set `APP_REF` to a
-   ref that has it. The workflows fail with an explicit message if the validator is missing.
+0. Push the plugin schema to `zeraix/zeraix` `main`. The workflows fail with an explicit message if
+   `electron/plugins/manifest.mjs` is not there; no release is required.
 1. Stand up the publish endpoint (design doc §5.2 — still a TODO in `publish.yml`). It receives the
    committed `plugins/` tree and `killlist.json`, and owes the client four things nothing else can
    supply: `sha512` per artifact computed from the bytes, one document embedding every manifest, a

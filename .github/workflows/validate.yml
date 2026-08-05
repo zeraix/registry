@@ -18,35 +18,20 @@ jobs:
       - name: Checkout registry
         uses: actions/checkout@v4
 
-      # The validator IS the client's validator (electron/plugins/manifest.mjs). Vendoring a copy
-      # here would let the two drift, and then "strict mode passed" would stop meaning "clients will
-      # accept this" — which is the entire value of validating at review time.
-      # Which app version? Not `main` — see _app-checkout.md. Validating against unreleased code
-      # would accept manifests that every shipped client skips, with a green check to say otherwise.
-      - name: Resolve app ref
-        id: app
-        env:
-          APP_REF: ${{ vars.APP_REF }}
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if [ -n "$APP_REF" ]; then
-            echo "ref=$APP_REF" >> "$GITHUB_OUTPUT"
-            echo "pinned to $APP_REF via the APP_REF variable"
-            exit 0
-          fi
-          ref="$(gh release view --repo zeraix/zeraix --json tagName --jq .tagName 2>/dev/null || true)"
-          if [ -z "$ref" ]; then
-            echo "::error::could not resolve the latest zeraix/zeraix release. Set the APP_REF variable to a tag."
-            exit 1
-          fi
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-          echo "using the latest app release: $ref"
-
+      # One file is borrowed from the app repo: electron/plugins/manifest.mjs, the client's own
+      # validator. Vendoring a copy here would let the two drift, and then "strict mode passed" would
+      # stop meaning "clients will accept this" — which is the entire value of validating at review
+      # time.
+      #
+      # Tracks `main`. There is deliberately no version resolution: which release a user happens to
+      # run is not something this repo can know or should encode, and pinning to the newest release
+      # only made CI *stricter* than the schema — it rejected manifests newer clients accept, while
+      # older clients already handle anything they do not recognise by skipping it (design doc §7).
       - name: Checkout app (for the shared validator)
         uses: actions/checkout@v4
         with:
           repository: zeraix/zeraix
-          ref: ${{ steps.app.outputs.ref }}
+          ref: main
           path: .app
 
       - name: Setup Node.js
@@ -54,25 +39,16 @@ jobs:
         with:
           node-version: 22
 
-      # A missing validator means the app release predates the plugin schema — a MODULE_NOT_FOUND
-      # stack trace does not say that, and this is the first thing anyone will hit.
+      # A MODULE_NOT_FOUND stack trace would not say which file was missing or why it matters.
       - name: Check the shared validator is present
         run: |
           if [ ! -f .app/electron/plugins/manifest.mjs ]; then
-            echo "::error::${{ steps.app.outputs.ref }} of zeraix/zeraix has no electron/plugins/manifest.mjs,"
-            echo "::error::so there is nothing to validate submissions against."
+            echo "::error::zeraix/zeraix main has no electron/plugins/manifest.mjs, so there is nothing"
+            echo "::error::to validate submissions against. It was moved, renamed, or never pushed."
             echo "::error::"
-            echo "::error::Unblock now — point the checkout at a ref that has the schema:"
-            echo "::error::  gh variable set APP_REF --body main --repo ${{ github.repository }}"
-            echo "::error::  (or Settings -> Secrets and variables -> Actions -> Variables -> APP_REF = main)"
-            echo "::error::"
-            echo "::error::Then undo it: once a zeraix/zeraix release contains the schema, delete APP_REF so"
-            echo "::error::the checkout goes back to the latest release. Validating against main accepts"
-            echo "::error::manifests that shipped clients skip — see .github/workflows/_app-checkout.md."
-            echo "::error::"
-            echo "::error::This does not fall back to main on its own, and does not skip validation: feeds"
-            echo "::error::are unsigned, so review is the only gate, and a green check that checked nothing"
-            echo "::error::is worse than a red one."
+            echo "::error::Validation is not skipped when the validator is missing: feeds are unsigned,"
+            echo "::error::so review is the only gate, and a green check that checked nothing is worse"
+            echo "::error::than a red one."
             exit 1
           fi
 
