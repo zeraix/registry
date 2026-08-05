@@ -7,19 +7,20 @@ audience: user
 scope: targeted
 tags: [office, word, docx, documents]
 description: Read and reason about Word .docx files correctly — heading structure, tables, and the traps that make naive extraction wrong. Use whenever a task involves a .docx.
-allowedTools: [docx_to_markdown, docx_outline, docx_tables, run_command, read_file]
+allowedTools: [run_command, read_file]
 ---
 
 # Working with Word documents
 
 ## Reading one
 
-**If `docx_to_markdown` is available, use it.** For a long document, call `docx_outline` first to
-find the section you need, then read only that. `docx_tables` returns figures as structured rows —
-use it whenever the answer depends on a number, rather than reading them out of prose.
+> **About this plugin's `docx_to_markdown / docx_outline / docx_tables` tools.** This plugin ships them, but they are only registered
+> when the host build supports plugin-provided tools — which most builds do not. **Do not call them.**
+> If they appear in your tool list you may use them; otherwise the method below reads the same file
+> and needs nothing installed. Never report a failed tool call as "the document could not be read".
 
-**If those tools are not available**, a `.docx` is a ZIP of XML and you can read it with Python's
-standard library — no install required:
+A `.docx` is a ZIP of XML. Read it with Python's standard library via `run_command` — nothing to
+install, works on any host:
 
 ```bash
 python -c "

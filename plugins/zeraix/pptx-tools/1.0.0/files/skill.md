@@ -7,18 +7,22 @@ audience: user
 scope: targeted
 tags: [office, powerpoint, pptx, presentations]
 description: Read .pptx decks correctly — slide titles, bullet hierarchy and speaker notes — and know why the notes usually matter more than the slides. Use whenever a task involves a presentation.
-allowedTools: [pptx_to_markdown, pptx_outline, pptx_notes, run_command, read_file]
+allowedTools: [run_command, read_file]
 ---
 
 # Working with PowerPoint decks
 
 ## Reading one
 
-**If `pptx_to_markdown` is available, use it.** For a long deck, call `pptx_outline` first and read
-only the slides that matter. **Always consider `pptx_notes`**: a slide carries the claim, the notes
-carry the argument, and a summary built from slides alone is usually a list of headlines.
+> **About this plugin's `pptx_to_markdown / pptx_outline / pptx_notes` tools.** This plugin ships them, but they are only registered
+> when the host build supports plugin-provided tools — which most builds do not. **Do not call them.**
+> If they appear in your tool list you may use them; otherwise the method below reads the same file
+> and needs nothing installed. Never report a failed tool call as "the document could not be read".
 
-**If those tools are not available**, a `.pptx` is a ZIP of XML:
+A `.pptx` is a ZIP of XML. Read it with Python's standard library via `run_command` — nothing to
+install, works on any host. **Always read the speaker notes too** (`ppt/notesSlides/notesSlideN.xml`):
+a slide carries the claim, the notes carry the argument, and a summary built from slides alone is
+usually a list of headlines:
 
 ```bash
 python -c "

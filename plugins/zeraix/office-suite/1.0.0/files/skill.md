@@ -7,7 +7,7 @@ audience: user
 scope: targeted
 tags: [office, documents, spreadsheets, formatting]
 description: Structure and format documents, spreadsheets and decks so they survive review — heading hierarchy, named styles, readable tables, and exports that hold their layout. Use when writing or fixing a .docx, .xlsx or .pptx.
-allowedTools: [docx_extract, docx_write, xlsx_query, convert_to_pdf, read_file]
+allowedTools: [read_file, run_command]
 ---
 
 # Office Formatting
@@ -23,7 +23,7 @@ else can open, edit and print without repairing it first.
    tree, not from how the text looks.
 2. **One H1.** It is the document title. Do not skip levels on the way down.
 3. **Tables carry a header row** marked as such, so it repeats across page breaks.
-   Merged cells break both screen readers and `xlsx_query`; find another layout.
+   Merged cells break screen readers and every programmatic reader; find another layout.
 4. **Images need alt text.** A figure with no alt text fails review in most
    organisations and is invisible to anyone using a screen reader.
 
@@ -45,10 +45,20 @@ else can open, edit and print without repairing it first.
 2. Body text no smaller than 18pt. If it does not fit, the slide is two slides.
 3. Speaker notes carry the detail. The slide carries the claim.
 
+## About this plugin's tools
+
+This plugin declares `docx_extract`, `docx_write`, `xlsx_query`, `convert_to_pdf` and others, but
+they are only registered when the host build supports plugin-provided tools — which most builds do
+not. **Do not call them.** If they appear in your tool list you may; otherwise say plainly that the
+capability is not available here rather than reporting a failed tool call as a broken document.
+
+This skill is guidance about *structure*, and it stands on its own: it tells you how a document
+should be built, which is useful whether or not anything here can open one for you.
+
 ## Before you finish
 
-- Run `convert_to_pdf` and look at the result. Pagination, widows and cut-off
-  tables only appear in the export, and this is where fidelity between the
-  native application and the fallback converter shows up.
-- Check the document against the house style memory before declaring it done —
-  date format and terminology are the two things reviewers always catch.
+- Check the document against the house style before declaring it done — date format and terminology
+  are the two things reviewers always catch.
+- Pagination, widows and cut-off tables only appear in an export, so a PDF check is worth doing when
+  the user has a converter available. Ask; do not assume one is installed, and do not claim to have
+  checked pagination you could not see.

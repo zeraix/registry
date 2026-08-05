@@ -7,18 +7,21 @@ audience: user
 scope: targeted
 tags: [office, excel, xlsx, spreadsheets, data]
 description: Read .xlsx workbooks correctly — shared strings, sparse rows, cached formula results — and reason about the numbers rather than their rendered text. Use whenever a task involves a spreadsheet.
-allowedTools: [xlsx_sheets, xlsx_read_sheet, xlsx_to_markdown, run_command, read_file]
+allowedTools: [run_command, read_file]
 ---
 
 # Working with Excel spreadsheets
 
 ## Reading one
 
-**If `xlsx_read_sheet` is available, use it.** Call `xlsx_sheets` first when you do not know which
-sheet holds the data — a workbook's interesting sheet is rarely the first. Use `xlsx_read_sheet` when
-you need to compute; `xlsx_to_markdown` only to show a small sheet to the user.
+> **About this plugin's `xlsx_sheets / xlsx_read_sheet / xlsx_to_markdown` tools.** This plugin ships them, but they are only registered
+> when the host build supports plugin-provided tools — which most builds do not. **Do not call them.**
+> If they appear in your tool list you may use them; otherwise the method below reads the same file
+> and needs nothing installed. Never report a failed tool call as "the document could not be read".
 
-**If those tools are not available**, a `.xlsx` is a ZIP of XML. Python's standard library reads it:
+A `.xlsx` is a ZIP of XML. Read it with Python's standard library via `run_command` — nothing to
+install, works on any host. A workbook's interesting sheet is rarely the first, so check the sheet
+names in `xl/workbook.xml` before assuming `sheet1`:
 
 ```bash
 python -c "
