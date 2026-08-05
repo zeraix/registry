@@ -126,3 +126,4 @@ artifact URLs and then went nowhere, which looks exactly like a successful publi
 2. Set the `PLUGIN_BASE_URL` and `PUBLISH_URL` repository variables and the `PUBLISH_TOKEN` secret.
 3. Flip `PLUGINS_UI_ENABLED` in the app's `src/constants/App.ts` and ship a release. Until then the
    client never configures the registry and makes no plugin requests.
+
