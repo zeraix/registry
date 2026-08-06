@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/git",
+  "version": "1.0.0",
+  "name": "Git",
+  "description": "Git and forge workflow, end to end: search issues on the remote, branch before fixing, keep commits reviewable, open a pull request, and land it. Plus the judgment parts — rebase-or-merge, conflict resolution, finding the change that caused a bug, and getting work back after a bad command.",
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/git",
+  "pricing": {
+    "model": "free"
+  },
+  "providers": {
+    "forge": {
+      "kind": "http",
+      "tier": "sandboxed",
+      "url": "https://api.github.com",
+      "permissions": {
+        "network": [
+          "api.github.com"
+        ],
+        "credentials": [
+          "forge_token"
+        ]
+      },
+      "needs": [
+        {
+          "key": "FORGE_TOKEN",
+          "prompt": "Personal access token for the code host, with issue and pull-request scope",
+          "secret": true
+        },
+        {
+          "key": "FORGE_API_URL",
+          "prompt": "API base URL — leave blank for github.com, set it for a self-hosted or enterprise instance",
+          "secret": false
+        }
+      ]
+    }
+  },
+  "capabilities": [
+    {
+      "type": "skill",
+      "id": "issue_workflow",
+      "name": "Fixing an issue end to end",
+      "description": "The full path from a reported issue to a branch: finding and reading the issue, deriving a branch name, and the rule that a fix never starts on the base branch.",
+      "module": "issues",
+      "path": "skills/issue-workflow.md"
+    },
+    {
+      "type": "skill",
+      "id": "integration",
+      "name": "Opening and landing pull requests",
+      "description": "Turning a finished branch into a reviewable pull request and getting it merged — what the description owes a reviewer, which merge strategy to use, and the checks that must pass before anything lands.",
+      "module": "issues",
+      "path": "skills/integration.md"
+    },
+    {
+      "type": "skill",
+      "id": "commits",
+      "name": "Writing commits",
+      "description": "How to stage and split work into commits that survive review and stay bisectable — what belongs in one commit, what a message has to explain, and when to amend rather than add.",
+      "module": "workflow",
+      "path": "skills/commits.md"
+    },
+    {
+      "type": "skill",
+      "id": "branching",
+      "name": "Branching, rebasing and conflicts",
+      "description": "When to rebase and when to merge, how to update a branch without rewriting shared history, and how to resolve conflicts by understanding both sides rather than picking one.",
+      "module": "workflow",
+      "path": "skills/branching.md"
+    },
+    {
+      "type": "skill",
+      "id": "history",
+      "name": "Investigating history",
+      "description": "Finding the commit that introduced a behaviour: searching history by content rather than by message, reading blame past reformatting, and driving bisect with a script instead of by hand.",
+      "module": "history",
+      "path": "skills/history.md"
+    },
+    {
+      "type": "skill",
+      "id": "recovery",
+      "name": "Recovering lost work",
+      "description": "What is recoverable after a bad command and what is not — reflog, the three reset modes, dangling commits, and the small set of operations that genuinely destroy data.",
+      "module": "recovery",
+      "path": "skills/recovery.md"
+    },
+    {
+      "type": "skill",
+      "id": "collaboration",
+      "name": "Sharing work safely",
+      "description": "Remotes, force-push safety, and the rules for rewriting history other people may already have — including how to tell whether a branch is genuinely private.",
+      "module": "workflow",
+      "path": "skills/collaboration.md"
+    },
+    {
+      "type": "prompt",
+      "id": "fix_issue",
+      "name": "Fix an issue",
+      "description": "Take an issue, branch, fix it, verify it, and open a pull request that closes it.",
+      "module": "commands",
+      "path": "prompts/fix-issue.md"
+    },
+    {
+      "type": "prompt",
+      "id": "investigate_regression",
+      "name": "Investigate a regression",
+      "description": "Find the commit that introduced a bug, using a scripted bisect over a reproducer rather than reading diffs by hand.",
+      "module": "commands",
+      "path": "prompts/investigate-regression.md"
+    },
+    {
+      "type": "prompt",
+      "id": "prepare_for_review",
+      "name": "Prepare a branch for review",
+      "description": "Get the current branch into a state a reviewer can actually read: coherent commits, current with the base, no stray files.",
+      "module": "commands",
+      "path": "prompts/prepare-for-review.md"
+    },
+    {
+      "type": "prompt",
+      "id": "explain_history",
+      "name": "Explain how this got here",
+      "description": "Reconstruct why a file or function looks the way it does, from the commits that shaped it.",
+      "module": "commands",
+      "path": "prompts/explain-history.md"
+    },
+    {
+      "type": "subagent",
+      "id": "issue_scout",
+      "name": "Issue scout",
+      "description": "Searches the remote's issues for ones matching a description and returns a shortlist with evidence. Delegate so that pages of issue listings do not fill the main conversation.",
+      "module": "agents",
+      "path": "agents/issue-scout.md"
+    },
+    {
+      "type": "subagent",
+      "id": "history_investigator",
+      "name": "History investigator",
+      "description": "Searches history to answer a specific question and returns findings only. Delegate so that dozens of log, blame and diff outputs do not fill the main conversation.",
+      "module": "agents",
+      "path": "agents/history-investigator.md"
+    },
+    {
+      "type": "subagent",
+      "id": "conflict_resolver",
+      "name": "Conflict resolver",
+      "description": "Works through a conflicted merge or rebase file by file, reading both sides before choosing. Delegate when a conflict is large enough that the hunks would crowd out everything else.",
+      "module": "agents",
+      "path": "agents/conflict-resolver.md"
+    },
+    {
+      "type": "tool",
+      "id": "issue_search",
+      "name": "Search issues",
+      "description": "Search the remote repository's issues by text, label, state and author, returning matches with number, title and status.",
+      "module": "issues",
+      "provider": "forge"
+    },
+    {
+      "type": "tool",
+      "id": "issue_get",
+      "name": "Read an issue",
+      "description": "Fetch one issue in full — body, labels, linked pull requests and comment thread.",
+      "module": "issues",
+      "provider": "forge"
+    },
+    {
+      "type": "tool",
+      "id": "pr_create",
+      "name": "Open a pull request",
+      "description": "Open a pull request from the current branch, with title, description and draft state.",
+      "module": "issues",
+      "provider": "forge"
+    },
+    {
+      "type": "tool",
+      "id": "pr_status",
+      "name": "Pull request status",
+      "description": "Report a pull request's review state, required checks and mergeability, to decide whether it can land.",
+      "module": "issues",
+      "provider": "forge"
+    },
+    {
+      "type": "tool",
+      "id": "pr_merge",
+      "name": "Merge a pull request",
+      "description": "Merge an approved pull request with the repository's merge strategy, and delete the source branch. Refuses while required checks are failing or unfinished.",
+      "module": "issues",
+      "provider": "forge"
+    }
+  ]
+}
