@@ -1,0 +1,935 @@
+{
+  "type": "index",
+  "sequence": 1785989085,
+  "issuedAt": "2026-08-06T04:04:45.469Z",
+  "plugins": [
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "zeraix/docx-tools",
+        "version": "1.0.0",
+        "name": "Word Documents",
+        "description": "Read Word .docx files: convert to Markdown with headings and tables intact, pull just the outline, or extract tables as structured rows.",
+        "license": "AGPL-3.0-or-later",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/docx-tools",
+        "publisher": "zeraix",
+        "providers": {
+          "docx": {
+            "kind": "mcp-stdio",
+            "tier": "sandboxed",
+            "runtime": "node",
+            "entry": "server/index.js",
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": "JuXWNIUPHrdCD2yazxGeRF9thK+7jDUgQBtV7vEOF4n7ZV84AjszPAWg8xl9uXyfehxQ7/JdltE+nGCN++ZjhA==",
+            "permissions": {
+              "network": [],
+              "filesystem": [
+                "$WORKSPACE"
+              ],
+              "credentials": []
+            },
+            "needs": []
+          }
+        },
+        "capabilities": [
+          {
+            "type": "tool",
+            "id": "docx_to_markdown",
+            "name": "Document to Markdown",
+            "description": "Convert a .docx to Markdown, preserving headings, lists and tables.",
+            "module": "reading",
+            "provider": "docx",
+            "bind": null,
+            "providers": [
+              "docx"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "docx_outline",
+            "name": "Document outline",
+            "description": "Return only the heading structure, to locate a section cheaply.",
+            "module": "reading",
+            "provider": "docx",
+            "bind": null,
+            "providers": [
+              "docx"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "docx_tables",
+            "name": "Extract tables",
+            "description": "Extract every table as structured rows.",
+            "module": "reading",
+            "provider": "docx",
+            "bind": null,
+            "providers": [
+              "docx"
+            ]
+          },
+          {
+            "type": "skill",
+            "id": "word_documents",
+            "name": "Working with Word documents",
+            "description": "How to read and reason about .docx files, including a dependency-free fallback when the plugin's own tools are unavailable.",
+            "module": "guidance",
+            "path": "skill.md",
+            "sha512": "5jT+ZV2HtbO/BZMZ72TurbORMYm9m7JoFdRO6mJ4zs9rHbpndOPt/y44J+pp4Ks7paW1e2nEKOonuEV1dNK1Ow==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/docx-tools/1.0.0/files/"
+      }
+    },
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "zeraix/git",
+        "version": "1.0.0",
+        "name": "Git",
+        "description": "Git and forge workflow, end to end: search issues on the remote, branch before fixing, keep commits reviewable, open a pull request, and land it. Plus the judgment parts — rebase-or-merge, conflict resolution, finding the change that caused a bug, and getting work back after a bad command.",
+        "license": "AGPL-3.0-or-later",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/git",
+        "publisher": "zeraix",
+        "providers": {
+          "forge": {
+            "kind": "http",
+            "tier": "sandboxed",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": "https://api.github.com",
+            "sha512": null,
+            "permissions": {
+              "network": [
+                "api.github.com"
+              ],
+              "filesystem": [],
+              "credentials": [
+                "forge_token"
+              ]
+            },
+            "needs": [
+              {
+                "key": "FORGE_TOKEN",
+                "prompt": "Personal access token for the code host, with issue and pull-request scope",
+                "secret": true
+              },
+              {
+                "key": "FORGE_API_URL",
+                "prompt": "API base URL — leave blank for github.com, set it for a self-hosted or enterprise instance",
+                "secret": false
+              }
+            ]
+          }
+        },
+        "capabilities": [
+          {
+            "type": "skill",
+            "id": "issue_workflow",
+            "name": "Fixing an issue end to end",
+            "description": "The full path from a reported issue to a branch: finding and reading the issue, deriving a branch name, and the rule that a fix never starts on the base branch.",
+            "module": "issues",
+            "path": "skills/issue-workflow.md",
+            "sha512": "fSA39w0Hx7vnLQv0I55Gsuvl11ug4lrjPiQ92+8XnGxM+ECnsa47N/6fwKDVhqL3AigvMxLmYS5xmyYQ89rDWw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "skill",
+            "id": "integration",
+            "name": "Opening and landing pull requests",
+            "description": "Turning a finished branch into a reviewable pull request and getting it merged — what the description owes a reviewer, which merge strategy to use, and the checks that must pass before anything lands.",
+            "module": "issues",
+            "path": "skills/integration.md",
+            "sha512": "LyeTJbczlBQWc3alJYf9YiH1kBJONCz0jYd2DUfMIhwQMpSau2UEsdn/42Z/rRBNWIJxC3faeOQ4lVmcerYhYw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "skill",
+            "id": "commits",
+            "name": "Writing commits",
+            "description": "How to stage and split work into commits that survive review and stay bisectable — what belongs in one commit, what a message has to explain, and when to amend rather than add.",
+            "module": "workflow",
+            "path": "skills/commits.md",
+            "sha512": "am8QER3mPtFd/IeMAIrvs335xsOH31PeX87Vo/yC3essy4iSyPmwGfI5jlbiOKucBfoOP1ZU1dgFLUohAhuK3A==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "skill",
+            "id": "branching",
+            "name": "Branching, rebasing and conflicts",
+            "description": "When to rebase and when to merge, how to update a branch without rewriting shared history, and how to resolve conflicts by understanding both sides rather than picking one.",
+            "module": "workflow",
+            "path": "skills/branching.md",
+            "sha512": "tUfQrWgKUFx0W/QIpnpnuiiB1sZzgx2fMVdNZvojbB84Xu3A61SzPvwbOX7H3I2+y9dZ1nTWohSAQultYwOFMg==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "skill",
+            "id": "history",
+            "name": "Investigating history",
+            "description": "Finding the commit that introduced a behaviour: searching history by content rather than by message, reading blame past reformatting, and driving bisect with a script instead of by hand.",
+            "module": "history",
+            "path": "skills/history.md",
+            "sha512": "gPr7xnn/4bng9XaAc8CrTcl7PvD+0fhUVv9UD1alxrIN6ScfJvA1CVpKJxFDMj3cyvkWlUn8+Duw3aMoBjBNvg==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "skill",
+            "id": "recovery",
+            "name": "Recovering lost work",
+            "description": "What is recoverable after a bad command and what is not — reflog, the three reset modes, dangling commits, and the small set of operations that genuinely destroy data.",
+            "module": "recovery",
+            "path": "skills/recovery.md",
+            "sha512": "ytgyupeZucihrMHFC2uxE4tnyTnB9tMlxGNTS9dt2zekPY+iovgDdRV7yMkZki+KibXgrNhWrTQNJt7u8ue3FA==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "skill",
+            "id": "collaboration",
+            "name": "Sharing work safely",
+            "description": "Remotes, force-push safety, and the rules for rewriting history other people may already have — including how to tell whether a branch is genuinely private.",
+            "module": "workflow",
+            "path": "skills/collaboration.md",
+            "sha512": "xFseIX2Z/KELSR9/muQ6VUGGL+3MMUbkDjZyny/DTLcwtzAJ26oAkQM4CpuPbwVGRde0Y8dYF+SUqg8+3Ocvcw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "prompt",
+            "id": "fix_issue",
+            "name": "Fix an issue",
+            "description": "Take an issue, branch, fix it, verify it, and open a pull request that closes it.",
+            "module": "commands",
+            "path": "prompts/fix-issue.md",
+            "sha512": "KAmf1aum8t5uVhXvGqZCzrRZldli1DjsoXSaaTAv0zs6gDfymo43XZ9x0yM/kbSpgMs0hi6hl6NgZpuSmUULVw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "prompt",
+            "id": "investigate_regression",
+            "name": "Investigate a regression",
+            "description": "Find the commit that introduced a bug, using a scripted bisect over a reproducer rather than reading diffs by hand.",
+            "module": "commands",
+            "path": "prompts/investigate-regression.md",
+            "sha512": "eCgnpWzro1DfHv+A9jBJuEOwk28Td+a2WKJ1S0r5A1R+vuN9mkm3f1lK5jc8hLegGfOWT/PrwFTSEIGzl+NfTQ==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "prompt",
+            "id": "prepare_for_review",
+            "name": "Prepare a branch for review",
+            "description": "Get the current branch into a state a reviewer can actually read: coherent commits, current with the base, no stray files.",
+            "module": "commands",
+            "path": "prompts/prepare-for-review.md",
+            "sha512": "lszPhO0eU1VVGS80CWDwwKWmaNGyd9xWCFT5B6bIgXCwca9f/X8L9sfB3SmrUArWfpfkWmDaQMtguUKv9W6U7w==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "prompt",
+            "id": "explain_history",
+            "name": "Explain how this got here",
+            "description": "Reconstruct why a file or function looks the way it does, from the commits that shaped it.",
+            "module": "commands",
+            "path": "prompts/explain-history.md",
+            "sha512": "jiy9ul//5cVT+Mv5lgjsqHWOX3H1SaTE6CERIJIkVBrOsb10M/F/51nTnK6gSiHEYn/ggJPbCsaQFrSnGM3+Wg==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "subagent",
+            "id": "issue_scout",
+            "name": "Issue scout",
+            "description": "Searches the remote's issues for ones matching a description and returns a shortlist with evidence. Delegate so that pages of issue listings do not fill the main conversation.",
+            "module": "agents",
+            "path": "agents/issue-scout.md",
+            "sha512": "glO9/r8Z1hEEHvgj4YFKiz03RwZyeif2PSMrPK8H8zsL5AluNTlDVfhZ6Fc5OOtUsO4HX0sQQH5i2LlA6FDF1g==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "subagent",
+            "id": "history_investigator",
+            "name": "History investigator",
+            "description": "Searches history to answer a specific question and returns findings only. Delegate so that dozens of log, blame and diff outputs do not fill the main conversation.",
+            "module": "agents",
+            "path": "agents/history-investigator.md",
+            "sha512": "P34bz94h4nsj0eiOpNJ3/3c1QF3fGByayYw7OMeLB7zsAip7rNRCDb11UEokysLWz8RdyhmOIRBlUB+x6nQRHA==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "subagent",
+            "id": "conflict_resolver",
+            "name": "Conflict resolver",
+            "description": "Works through a conflicted merge or rebase file by file, reading both sides before choosing. Delegate when a conflict is large enough that the hunks would crowd out everything else.",
+            "module": "agents",
+            "path": "agents/conflict-resolver.md",
+            "sha512": "2ifV1xbbggHLFSLjiOFeQveFL3mf2m3BO66ioR7FsmLwehS8sZqFWN2GrNSq7+Xh3QRDZWV6m2LFyt4uNr7QFg==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "tool",
+            "id": "issue_search",
+            "name": "Search issues",
+            "description": "Search the remote repository's issues by text, label, state and author, returning matches with number, title and status.",
+            "module": "issues",
+            "provider": "forge",
+            "bind": null,
+            "providers": [
+              "forge"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "issue_get",
+            "name": "Read an issue",
+            "description": "Fetch one issue in full — body, labels, linked pull requests and comment thread.",
+            "module": "issues",
+            "provider": "forge",
+            "bind": null,
+            "providers": [
+              "forge"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "pr_create",
+            "name": "Open a pull request",
+            "description": "Open a pull request from the current branch, with title, description and draft state.",
+            "module": "issues",
+            "provider": "forge",
+            "bind": null,
+            "providers": [
+              "forge"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "pr_status",
+            "name": "Pull request status",
+            "description": "Report a pull request's review state, required checks and mergeability, to decide whether it can land.",
+            "module": "issues",
+            "provider": "forge",
+            "bind": null,
+            "providers": [
+              "forge"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "pr_merge",
+            "name": "Merge a pull request",
+            "description": "Merge an approved pull request with the repository's merge strategy, and delete the source branch. Refuses while required checks are failing or unfinished.",
+            "module": "issues",
+            "provider": "forge",
+            "bind": null,
+            "providers": [
+              "forge"
+            ]
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/git/1.0.0/files/"
+      }
+    },
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "zeraix/office-suite",
+        "version": "1.0.0",
+        "name": "Office Suite",
+        "description": "Read, write and convert Word, Excel and PowerPoint files, extract text from scanned documents, and draft documents in your organisation's house style.",
+        "license": "AGPL-3.0-or-later",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/office-suite",
+        "publisher": "zeraix",
+        "providers": {
+          "docs": {
+            "kind": "mcp-stdio",
+            "tier": "sandboxed",
+            "runtime": "node",
+            "entry": "server/index.js",
+            "command": null,
+            "args": [
+              "--stdio"
+            ],
+            "url": null,
+            "sha512": "CUJzoNl8vTgCDxFLNIYqU2GNfjVnS22Gl2mgcit4XOlZlPriS2loOdZC9BcREbJpYyH6SnMtO8//qYbxUlSzsg==",
+            "permissions": {
+              "network": [],
+              "filesystem": [
+                "$WORKSPACE",
+                "$TMP/office"
+              ],
+              "credentials": []
+            },
+            "needs": []
+          },
+          "cloud": {
+            "kind": "mcp-http",
+            "tier": "sandboxed",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": "https://api.zeraix.com/office/mcp",
+            "sha512": null,
+            "permissions": {
+              "network": [
+                "api.zeraix.com"
+              ],
+              "filesystem": [],
+              "credentials": [
+                "office_api_token"
+              ]
+            },
+            "needs": [
+              {
+                "key": "OFFICE_API_TOKEN",
+                "prompt": "API token for the Office cloud service",
+                "secret": true
+              }
+            ]
+          },
+          "convert": {
+            "kind": "process",
+            "tier": "sandboxed",
+            "runtime": "python",
+            "entry": "bin/convert.py",
+            "command": null,
+            "args": [
+              "--quiet"
+            ],
+            "url": null,
+            "sha512": "GQ0HNQhF26I431dPPObu0LCusj2edQImfQH8XlJl92fJXaxZs3H7sCR8RmilhBSuP9ODmIDfzQrhHzjz0RlRUQ==",
+            "permissions": {
+              "network": [],
+              "filesystem": [
+                "$WORKSPACE",
+                "$TMP/office"
+              ],
+              "credentials": []
+            },
+            "needs": []
+          },
+          "gallery": {
+            "kind": "http",
+            "tier": "sandboxed",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": "https://api.zeraix.com/office/templates/v1",
+            "sha512": null,
+            "permissions": {
+              "network": [
+                "*.zeraix.com"
+              ],
+              "filesystem": [],
+              "credentials": []
+            },
+            "needs": [
+              {
+                "key": "TEMPLATE_GALLERY_LOCALE",
+                "prompt": "Locale for template descriptions, e.g. en-GB",
+                "secret": false
+              }
+            ]
+          },
+          "native": {
+            "kind": "builtin",
+            "tier": "host",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": null,
+            "permissions": {
+              "network": [],
+              "filesystem": [],
+              "credentials": []
+            },
+            "needs": []
+          },
+          "bundled": {
+            "kind": "text",
+            "tier": "text",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": null,
+            "permissions": {
+              "network": [],
+              "filesystem": [],
+              "credentials": []
+            },
+            "needs": []
+          }
+        },
+        "capabilities": [
+          {
+            "type": "tool",
+            "id": "docx_extract",
+            "name": "Extract document text",
+            "description": "Read a .docx and return its text with heading structure preserved.",
+            "module": "documents",
+            "provider": "docs",
+            "bind": null,
+            "providers": [
+              "docs"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "docx_write",
+            "name": "Write document",
+            "description": "Create or update a .docx from Markdown, keeping the template's styles.",
+            "module": "documents",
+            "provider": "docs",
+            "bind": null,
+            "providers": [
+              "docs"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "xlsx_query",
+            "name": "Query spreadsheet",
+            "description": "Run a SQL-like query over a sheet and return matching rows.",
+            "module": "spreadsheets",
+            "provider": "docs",
+            "bind": null,
+            "providers": [
+              "docs"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "convert_to_pdf",
+            "name": "Convert to PDF",
+            "description": "Convert a document to PDF, preferring the installed office application for exact fidelity.",
+            "module": "conversion",
+            "bind": [
+              {
+                "provider": "native",
+                "when": "host.hasOfficeInstalled"
+              },
+              {
+                "provider": "convert",
+                "when": null
+              }
+            ],
+            "provider": "native",
+            "providers": [
+              "native",
+              "convert"
+            ]
+          },
+          {
+            "type": "model",
+            "id": "ocr_reader",
+            "name": "Scanned document OCR",
+            "description": "Vision model that turns scans and photographed pages into text.",
+            "module": "extraction",
+            "provider": "cloud",
+            "bind": null,
+            "providers": [
+              "cloud"
+            ]
+          },
+          {
+            "type": "resource",
+            "id": "template_gallery",
+            "name": "Template gallery",
+            "description": "Browsable catalogue of letter, report and deck templates.",
+            "module": "templates",
+            "provider": "gallery",
+            "bind": null,
+            "providers": [
+              "gallery"
+            ]
+          },
+          {
+            "type": "resource",
+            "id": "style_tokens",
+            "name": "House style tokens",
+            "description": "Fonts, colours and margins the house style expects.",
+            "module": "templates",
+            "provider": "bundled",
+            "bind": null,
+            "providers": [
+              "bundled"
+            ]
+          },
+          {
+            "type": "skill",
+            "id": "office_formatting",
+            "name": "Office Formatting",
+            "description": "How to structure and format a document, spreadsheet or deck so it survives review.",
+            "module": "writing",
+            "path": "skill.md",
+            "sha512": "li+k+xClkXUMZbLT30hnQCZNbA247czMQ3LdgkWz3FLIEG4/67Qghg1N985aUPCa+j7Ws6X+xtrlRqfUiwSntg==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "prompt",
+            "id": "meeting_minutes",
+            "name": "Meeting minutes",
+            "description": "Turn a raw transcript into minutes with decisions and owners pulled out.",
+            "module": "writing",
+            "path": "prompt.md",
+            "sha512": "oAbXyt/PrPdXZeo+7sJFoAgMicfBOeBMXFFOnJOWoxUwGWRi7rdyiqvQBnzx5FD0ev35FmiJDs9kyI952Ls68Q==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "memory",
+            "id": "house_style",
+            "name": "House style",
+            "description": "Starter house-style conventions — voice, date format, terminology — to edit for your organisation.",
+            "module": "writing",
+            "path": "memory.md",
+            "sha512": "Vm1EtlPkAJk8pphqeCqNszGvZOFkn6vh7bXYsN5bVDBLjMgM41aK3SK3BarXrZkBPb4aw0G7CGF9vcsz3jILSw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "subagent",
+            "id": "doc_reviewer",
+            "name": "Document reviewer",
+            "description": "Reviews a draft against the house style and returns findings only.",
+            "module": "agents",
+            "path": "subagent.md",
+            "sha512": "Aw7aFXCX46cJX79ePM6UjgJ9hmwGL0MXBShOAUii5wHKiINSaNaRkE19HEbO/OLbhUVwVV4QagZSHLik4y8ifg==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "workflow",
+            "id": "monthly_report",
+            "name": "Monthly report",
+            "description": "Collect the month's spreadsheets, build the report and export it to PDF.",
+            "module": "automation",
+            "path": "workflow.json",
+            "sha512": "oOu/CHs/K10WlGrB6iwrmX4Zyk+6eKSeheobVfOl+0pVzHTYiRjbrIbKtAlfD3ZAJBUoV6kVllNmFsdmtltiZw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          },
+          {
+            "type": "ui",
+            "id": "sheet_preview",
+            "name": "Spreadsheet preview",
+            "description": "Renders a sheet as a sortable table in a side panel.",
+            "module": "viewers",
+            "path": "ui/panel.html",
+            "sha512": "ljBae0w5BpWeeRheJ5VKJngcV1lAvi0V+6/ICb4+JR8dR4Oh0OV009nJhV1gNIoj4pQ5osmQ6s2gwNcOQeReWA==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/office-suite/1.0.0/files/"
+      }
+    },
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "zeraix/pptx-tools",
+        "version": "1.0.0",
+        "name": "PowerPoint Presentations",
+        "description": "Read PowerPoint .pptx decks: convert to Markdown one section per slide, list slide titles, or extract speaker notes.",
+        "license": "AGPL-3.0-or-later",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/pptx-tools",
+        "publisher": "zeraix",
+        "providers": {
+          "pptx": {
+            "kind": "mcp-stdio",
+            "tier": "sandboxed",
+            "runtime": "node",
+            "entry": "server/index.js",
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": "VBalup/BopA5KIGax968B403kW/+z/R6KcO8hb/9mC6ocPotoIDUk/bv7ucWLgmnDwmu1Adg4XlmFFWvq61Jjw==",
+            "permissions": {
+              "network": [],
+              "filesystem": [
+                "$WORKSPACE"
+              ],
+              "credentials": []
+            },
+            "needs": []
+          }
+        },
+        "capabilities": [
+          {
+            "type": "tool",
+            "id": "pptx_to_markdown",
+            "name": "Deck to Markdown",
+            "description": "Convert a deck to Markdown, one section per slide.",
+            "module": "reading",
+            "provider": "pptx",
+            "bind": null,
+            "providers": [
+              "pptx"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "pptx_outline",
+            "name": "Slide titles",
+            "description": "Return only the slide titles, to locate a slide cheaply.",
+            "module": "reading",
+            "provider": "pptx",
+            "bind": null,
+            "providers": [
+              "pptx"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "pptx_notes",
+            "name": "Speaker notes",
+            "description": "Extract the speaker notes for every slide.",
+            "module": "reading",
+            "provider": "pptx",
+            "bind": null,
+            "providers": [
+              "pptx"
+            ]
+          },
+          {
+            "type": "skill",
+            "id": "powerpoint_decks",
+            "name": "Working with PowerPoint decks",
+            "description": "How to read .pptx decks, why speaker notes usually matter more than the slides, and a dependency-free fallback.",
+            "module": "guidance",
+            "path": "skill.md",
+            "sha512": "uJDuHdDcpWT+6se9izti+jsTphb6L1IIHshmUiY20PiCL5j38a110ve40s+7egcNQtPFwGXQ2kHsoUePOhADpQ==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/pptx-tools/1.0.0/files/"
+      }
+    },
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "zeraix/weather",
+        "version": "1.0.0",
+        "name": "Weather",
+        "description": "Current conditions and forecasts for anywhere in the world, from the Open-Meteo public API. No account and no API key.",
+        "license": "AGPL-3.0-or-later",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/weather",
+        "publisher": "zeraix",
+        "providers": {
+          "openmeteo": {
+            "kind": "mcp-stdio",
+            "tier": "sandboxed",
+            "runtime": "node",
+            "entry": "server/index.js",
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": "cQLQZIbMsPDS3PM0ZaBoaCsC5ui/IbEYxC9j7flngRJsESzbwdkPZhbtoGkdxX1j9E4PXaTSl0DU/pCEo+0SLg==",
+            "permissions": {
+              "network": [
+                "api.open-meteo.com",
+                "geocoding-api.open-meteo.com"
+              ],
+              "filesystem": [],
+              "credentials": []
+            },
+            "needs": []
+          }
+        },
+        "capabilities": [
+          {
+            "type": "tool",
+            "id": "weather_current",
+            "name": "Current weather",
+            "description": "Current temperature, wind, humidity and conditions for a place or coordinates.",
+            "module": "reading",
+            "provider": "openmeteo",
+            "bind": null,
+            "providers": [
+              "openmeteo"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "weather_forecast",
+            "name": "Forecast",
+            "description": "Daily forecast up to 16 days: high, low, precipitation and conditions.",
+            "module": "reading",
+            "provider": "openmeteo",
+            "bind": null,
+            "providers": [
+              "openmeteo"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "weather_geocode",
+            "name": "Find a place",
+            "description": "Resolve a place name to coordinates, country and timezone. Use when a name is ambiguous.",
+            "module": "reading",
+            "provider": "openmeteo",
+            "bind": null,
+            "providers": [
+              "openmeteo"
+            ]
+          },
+          {
+            "type": "skill",
+            "id": "weather_reporting",
+            "name": "Reporting weather",
+            "description": "How to answer weather questions well: resolve ambiguous places, respect units, and never state a forecast more precisely than the data supports.",
+            "module": "guidance",
+            "path": "skill.md",
+            "sha512": "Mahp08NPegDtZWqamw1ficeX6aqZZDhAC6VuTWIrZZ4r4zM8k/iADdVuqilJoBud1QAZyM96YAqE/rPwxLaphw==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/weather/1.0.0/files/"
+      }
+    },
+    {
+      "manifest": {
+        "schemaVersion": 1,
+        "id": "zeraix/xlsx-tools",
+        "version": "1.0.0",
+        "name": "Excel Spreadsheets",
+        "description": "Read Excel .xlsx workbooks: list sheets, read rows as typed values so totals can be checked, or render a sheet as a Markdown table.",
+        "license": "AGPL-3.0-or-later",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/xlsx-tools",
+        "publisher": "zeraix",
+        "providers": {
+          "xlsx": {
+            "kind": "mcp-stdio",
+            "tier": "sandboxed",
+            "runtime": "node",
+            "entry": "server/index.js",
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": "9lMSWCvpttiZZCyTluVyJEqRgzQsV+XNJyZ5CHYKn7EpYpMBXPbre7dKM99Y2CVeq5gVMnIbKUgAqIAeDeZHyg==",
+            "permissions": {
+              "network": [],
+              "filesystem": [
+                "$WORKSPACE"
+              ],
+              "credentials": []
+            },
+            "needs": []
+          }
+        },
+        "capabilities": [
+          {
+            "type": "tool",
+            "id": "xlsx_sheets",
+            "name": "List sheets",
+            "description": "List every sheet with its row and column counts.",
+            "module": "reading",
+            "provider": "xlsx",
+            "bind": null,
+            "providers": [
+              "xlsx"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "xlsx_read_sheet",
+            "name": "Read sheet",
+            "description": "Read a sheet as rows of typed cell values; numbers stay numbers.",
+            "module": "reading",
+            "provider": "xlsx",
+            "bind": null,
+            "providers": [
+              "xlsx"
+            ]
+          },
+          {
+            "type": "tool",
+            "id": "xlsx_to_markdown",
+            "name": "Sheet to Markdown",
+            "description": "Render a sheet as a Markdown table.",
+            "module": "reading",
+            "provider": "xlsx",
+            "bind": null,
+            "providers": [
+              "xlsx"
+            ]
+          },
+          {
+            "type": "skill",
+            "id": "excel_spreadsheets",
+            "name": "Working with Excel spreadsheets",
+            "description": "How to read .xlsx workbooks correctly — shared strings, sparse rows, cached formula values — including a dependency-free fallback.",
+            "module": "guidance",
+            "path": "skill.md",
+            "sha512": "secsxhQnstPha0zoAt/9sUcQmeN9cR6px2rjdxUJDfLMymxLHqIKDl2aCFm+mhUtdt21PqD4BvMIRglbZW4ccA==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/xlsx-tools/1.0.0/files/"
+      }
+    }
+  ]
+}
