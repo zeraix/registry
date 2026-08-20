@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/gmail-send",
+  "version": "1.0.0",
+  "name": "Gmail",
+  "description": "Send email from chat through your own Gmail account, with guidance on when not to.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/gmail-send",
+  "pricing": {
+    "model": "free"
+  },
+  "providers": {
+    "google_auth": {
+      "kind": "oauth",
+      "tier": "host",
+      "oauth": {
+        "known_provider": "google",
+        "scopes": [
+          "https://www.googleapis.com/auth/gmail.send"
+        ],
+        "client": {
+          "type": "host"
+        },
+        "redirect": {
+          "method": "loopback"
+        },
+        "mints": "gmail_oauth"
+      },
+      "permissions": {
+        "network": [
+          "accounts.google.com",
+          "oauth2.googleapis.com"
+        ],
+        "credentials": []
+      }
+    },
+    "gmail_api": {
+      "kind": "http",
+      "tier": "sandboxed",
+      "url": "https://gmail.googleapis.com",
+      "auth": "google_auth",
+      "permissions": {
+        "network": [
+          "gmail.googleapis.com"
+        ],
+        "credentials": [
+          "gmail_oauth"
+        ]
+      }
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "send_email",
+      "module": "mail",
+      "name": "Send email",
+      "description": "Send an email from the signed-in Gmail account. Sent immediately; no draft is saved and there is no undo.",
+      "provider": "gmail_api"
+    },
+    {
+      "type": "skill",
+      "id": "gmail_etiquette",
+      "module": "mail",
+      "name": "Sending mail well",
+      "description": "When to send, when to confirm first, and which failures not to retry.",
+      "path": "skill.md"
+    }
+  ]
+}

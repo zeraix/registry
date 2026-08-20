@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "zeraix/oauth-template",
+  "version": "1.0.0",
+  "name": "OAuth plugin template",
+  "description": "Copy this to start a plugin that calls a third-party API on the user's behalf.",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/oauth-template",
+  "pricing": {
+    "model": "free"
+  },
+  "providers": {
+    "provider_auth": {
+      "kind": "oauth",
+      "tier": "host",
+      "oauth": {
+        "known_provider": "google",
+        "scopes": [
+          "https://www.googleapis.com/auth/gmail.send"
+        ],
+        "client": {
+          "type": "host"
+        },
+        "redirect": {
+          "method": "loopback"
+        },
+        "mints": "provider_oauth"
+      },
+      "permissions": {
+        "network": [
+          "accounts.google.com",
+          "oauth2.googleapis.com"
+        ],
+        "credentials": []
+      }
+    },
+    "provider_api": {
+      "kind": "http",
+      "tier": "sandboxed",
+      "url": "https://gmail.googleapis.com",
+      "auth": "provider_auth",
+      "permissions": {
+        "network": [
+          "gmail.googleapis.com"
+        ],
+        "credentials": [
+          "provider_oauth"
+        ]
+      }
+    }
+  },
+  "capabilities": [
+    {
+      "type": "tool",
+      "id": "do_the_thing",
+      "module": "main",
+      "name": "Do the thing",
+      "description": "Replace with what this actually does, in one sentence, in the user's terms.",
+      "provider": "provider_api"
+    }
+  ]
+}
