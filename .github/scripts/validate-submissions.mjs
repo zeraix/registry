@@ -18,6 +18,7 @@
  *
  *   node .github/scripts/validate-submissions.mjs --root . [--allow-reserved] [--app .app]
  */
+import { execFileSync } from "node:child_process";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -37,7 +38,47 @@ if (!fs.existsSync(validatorPath)) {
   console.error(`::error::no validator at ${validatorPath} — the app checkout is missing or predates the plugin schema.`);
   process.exit(1);
 }
-const { validateManifest, RESERVED_PUBLISHERS } = await import(`file://${validatorPath.replace(/\\/g, "/")}`);
+const validator = await import(`file://${validatorPath.replace(/\\/g, "/")}`);
+const { validateManifest, RESERVED_PUBLISHERS } = validator;
+
+/**
+ * Identify the borrowed validator in the log.
+ *
+ * Without this, every failure is ambiguous between "this manifest is wrong" and "the validator is
+ * older than this manifest", and the two are indistinguishable from the annotations: a stale
+ * validator rejects a correct submission with per-field errors that blame the plugin. The workflow
+ * tracks `main` deliberately, so skew is expected during a two-repo rollout -- schema changes land in
+ * the app repo first -- and it needs to be visible rather than deduced.
+ *
+ * SCHEMA_VERSION alone cannot carry this: additive changes ship as optional fields and cost no bump
+ * (see the app's manifest.mjs header), so a validator can be months behind at the same version. The
+ * vocabulary is what actually differs, so the vocabulary is what gets printed.
+ */
+function validatorIdentity() {
+  let rev = "unknown revision";
+  try {
+    rev = execFileSync("git", ["-C", appDir, "rev-parse", "--short", "HEAD"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    // A checkout without .git (a tarball, or a local --app pointing at a plain directory) is fine;
+    // the vocabulary below is the part that matters.
+  }
+  return {
+    rev,
+    schemaVersion: validator.SCHEMA_VERSION ?? "unknown",
+    providerKinds: validator.PROVIDER_KINDS ?? [],
+    capabilityTypes: validator.CAPABILITY_TYPES ?? [],
+  };
+}
+
+const identity = validatorIdentity();
+console.log(
+  `validator: zeraix/zeraix@${identity.rev} schemaVersion=${identity.schemaVersion}\n` +
+    `  provider kinds:   ${identity.providerKinds.join(", ") || "(not exported)"}\n` +
+    `  capability types: ${identity.capabilityTypes.join(", ") || "(not exported)"}`,
+);
 
 const sha512 = (buf) => crypto.createHash("sha512").update(buf).digest("base64");
 
@@ -209,8 +250,46 @@ for (const entry of collectPluginDirs(root)) {
   checked += 1;
 }
 
+/**
+ * Does this rejection look like the validator not knowing a word, rather than the manifest being wrong?
+ *
+ * These are the shapes a stale validator produces: it meets a kind, type or enum value added after it
+ * was written, and reports it as an invalid field. The manifest is fine; the vocabulary is old. Matched
+ * loosely on purpose -- the consequence of a false positive is one extra paragraph of log next to an
+ * error that is already failing the run, and the consequence of a false negative is the debugging
+ * session this exists to prevent.
+ */
+const SKEW_SHAPED = [
+  /unknown (provider kind|capability type)/i,
+  /must be one of/i,
+  /must be "[^"]+"(, "[^"]+")* or "[^"]+"/i,
+  /is newer than this client supports/i,
+];
+const skewSuspects = problems.filter((p) => SKEW_SHAPED.some((re) => re.test(p)));
+
 for (const w of warnings) console.log(`::warning::${w}`);
 for (const p of problems) console.log(`::error::${p}`);
+
+/**
+ * When the failures look like skew, say so ONCE, loudly, with the vocabulary that was actually used.
+ *
+ * Deliberately not a pass: a submission is still rejected. Feeds are unsigned, so review is the only
+ * gate, and relaxing it because the cause *might* be skew would turn a red run into a green one on a
+ * guess. This changes what the reader is told, not what is allowed -- and the cascade is why it
+ * matters: one unknown field on a provider drops that provider, and every `auth` reference to it then
+ * reports as a dangling reference, so a single skewed word can present as several unrelated errors.
+ */
+if (skewSuspects.length > 0) {
+  const note = [
+    `${skewSuspects.length} of ${problems.length} problem(s) name a field value the validator did not recognise.`,
+    `That is what a CORRECT submission looks like when the borrowed validator is older than the schema it targets.`,
+    `Validator in use: zeraix/zeraix@${identity.rev} (branch main), schemaVersion ${identity.schemaVersion}.`,
+    `It knows these provider kinds: ${identity.providerKinds.join(", ") || "(not exported)"}.`,
+    `Additive schema changes do not bump schemaVersion, so a matching version does NOT mean a matching vocabulary.`,
+    `If the submission is right, land the schema change on zeraix/zeraix main and re-run this job — no plugin edit is needed.`,
+  ];
+  for (const line of note) console.log(`::error::${line}`);
+}
 
 /**
  * Also write the outcome to the run summary.
@@ -223,8 +302,27 @@ for (const p of problems) console.log(`::error::${p}`);
 if (process.env.GITHUB_STEP_SUMMARY) {
   const lines =
     problems.length > 0
-      ? [`### ❌ ${problems.length} problem(s) — nothing is publishable`, "", ...problems.map((p) => `- ${p}`)]
-      : [`### ✅ ${checked} plugin(s) validated`];
+      ? [
+          `### ❌ ${problems.length} problem(s) — nothing is publishable`,
+          "",
+          ...problems.map((p) => `- ${p}`),
+          ...(skewSuspects.length > 0
+            ? [
+                "",
+                `> **${skewSuspects.length} of these name an unrecognised field value.** That is what a correct`,
+                `> submission looks like against a stale validator. In use: \`zeraix/zeraix@${identity.rev}\``,
+                `> (branch \`main\`), schemaVersion ${identity.schemaVersion}, provider kinds:`,
+                `> \`${identity.providerKinds.join("`, `") || "(not exported)"}\`.`,
+                `> Additive changes do not bump schemaVersion, so a matching version is not a matching vocabulary.`,
+                `> If the submission is right, land the schema change on \`zeraix/zeraix\` main and re-run.`,
+              ]
+            : []),
+        ]
+      : [
+          `### ✅ ${checked} plugin(s) validated`,
+          "",
+          `<sub>validator: \`zeraix/zeraix@${identity.rev}\` · schemaVersion ${identity.schemaVersion}</sub>`,
+        ];
   if (warnings.length > 0) {
     lines.push(
       "",
