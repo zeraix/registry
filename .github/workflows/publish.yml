@@ -67,8 +67,8 @@ jobs:
       # materialized the official built-in skills as plugins/zeraix/*, and the hand-authored official
       # plugins beside them were already reviewed on the way in (validate.yml refuses a reserved
       # publisher from a fork).
-      # - name: Validate everything
-      #   run: node .github/scripts/validate-submissions.mjs --root . --app .app --allow-reserved
+      - name: Validate everything
+        run: node .github/scripts/validate-submissions.mjs --root . --app .app --allow-reserved
 
       # Bootstrap vs misconfigured — a distinction worth making, because they deserve opposite
       # outcomes. Before the publish endpoint exists, validation-only is the honest result and a red X
