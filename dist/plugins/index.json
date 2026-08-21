@@ -1,7 +1,7 @@
 {
   "type": "index",
-  "sequence": 1785989088,
-  "issuedAt": "2026-08-21T07:23:48.470Z",
+  "sequence": 1785989089,
+  "issuedAt": "2026-08-21T07:29:05.322Z",
   "plugins": [
     {
       "manifest": {
@@ -466,7 +466,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/drafts",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -494,9 +493,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/drafts/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/drafts/{id}"
             },
             "bind": null,
             "providers": [
@@ -536,8 +533,7 @@
               "path": "/gmail/v1/users/me/drafts/{id}",
               "query": {
                 "format": "{format}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -579,8 +575,7 @@
                 "q": "{q}",
                 "maxResults": "{maxResults}",
                 "includeSpamTrash": "{includeSpamTrash}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -605,7 +600,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/drafts/send",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -638,7 +632,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/drafts/{id}",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -658,9 +651,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/profile",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/profile"
             },
             "bind": null,
             "providers": [
@@ -713,8 +704,7 @@
                 "pageToken": "{pageToken}",
                 "labelId": "{labelId}",
                 "startHistoryId": "{startHistoryId}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -739,7 +729,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/labels",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -767,9 +756,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/labels/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/labels/{id}"
             },
             "bind": null,
             "providers": [
@@ -796,9 +783,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/labels/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/labels/{id}"
             },
             "bind": null,
             "providers": [
@@ -817,9 +802,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/labels",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/labels"
             },
             "bind": null,
             "providers": [
@@ -851,7 +834,6 @@
             "request": {
               "method": "PATCH",
               "path": "/gmail/v1/users/me/labels/{id}",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -884,7 +866,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/labels/{id}",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -917,9 +898,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/messages/{messageId}/attachments/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/messages/{messageId}/attachments/{id}"
             },
             "bind": null,
             "providers": [
@@ -944,7 +923,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/messages/batchDelete",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -970,7 +948,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/messages/batchModify",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -998,9 +975,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/messages/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/messages/{id}"
             },
             "bind": null,
             "providers": [
@@ -1045,8 +1020,7 @@
               "query": {
                 "format": "{format}",
                 "metadataHeaders": "{metadataHeaders}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -1185,8 +1159,7 @@
                 "labelIds": "{labelIds}",
                 "q": "{q}",
                 "pageToken": "{pageToken}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -1218,7 +1191,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/messages/{id}/modify",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1244,7 +1216,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/messages/send",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1272,9 +1243,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/messages/{id}/trash",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/messages/{id}/trash"
             },
             "bind": null,
             "providers": [
@@ -1301,9 +1270,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/messages/{id}/untrash",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/messages/{id}/untrash"
             },
             "bind": null,
             "providers": [
@@ -1328,7 +1295,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/cse/identities",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1356,9 +1322,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/settings/cse/identities/{cseEmailAddress}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/cse/identities/{cseEmailAddress}"
             },
             "bind": null,
             "providers": [
@@ -1385,9 +1349,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/cse/identities/{cseEmailAddress}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/cse/identities/{cseEmailAddress}"
             },
             "bind": null,
             "providers": [
@@ -1419,8 +1381,7 @@
               "query": {
                 "pageSize": "{pageSize}",
                 "pageToken": "{pageToken}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -1452,7 +1413,6 @@
             "request": {
               "method": "PATCH",
               "path": "/gmail/v1/users/me/settings/cse/identities/{emailAddress}",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1521,7 +1481,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/cse/keypairs/{keyPairId}:disable",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1554,7 +1513,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/cse/keypairs/{keyPairId}:enable",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1582,9 +1540,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/cse/keypairs/{keyPairId}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/cse/keypairs/{keyPairId}"
             },
             "bind": null,
             "providers": [
@@ -1616,8 +1572,7 @@
               "query": {
                 "pageSize": "{pageSize}",
                 "pageToken": "{pageToken}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -1649,7 +1604,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/cse/keypairs/{keyPairId}:obliterate",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1675,7 +1629,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/delegates",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1703,9 +1656,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/settings/delegates/{delegateEmail}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/delegates/{delegateEmail}"
             },
             "bind": null,
             "providers": [
@@ -1732,9 +1683,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/delegates/{delegateEmail}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/delegates/{delegateEmail}"
             },
             "bind": null,
             "providers": [
@@ -1753,9 +1702,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/delegates",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/delegates"
             },
             "bind": null,
             "providers": [
@@ -1780,7 +1727,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/filters",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1808,9 +1754,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/settings/filters/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/filters/{id}"
             },
             "bind": null,
             "providers": [
@@ -1837,9 +1781,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/filters/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/filters/{id}"
             },
             "bind": null,
             "providers": [
@@ -1858,9 +1800,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/filters",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/filters"
             },
             "bind": null,
             "providers": [
@@ -1885,7 +1825,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/forwardingAddresses",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -1913,9 +1852,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/settings/forwardingAddresses/{forwardingEmail}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/forwardingAddresses/{forwardingEmail}"
             },
             "bind": null,
             "providers": [
@@ -1942,9 +1879,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/forwardingAddresses/{forwardingEmail}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/forwardingAddresses/{forwardingEmail}"
             },
             "bind": null,
             "providers": [
@@ -1963,9 +1898,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/forwardingAddresses",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/forwardingAddresses"
             },
             "bind": null,
             "providers": [
@@ -1984,9 +1917,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/autoForwarding",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/autoForwarding"
             },
             "bind": null,
             "providers": [
@@ -2005,9 +1936,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/imap",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/imap"
             },
             "bind": null,
             "providers": [
@@ -2026,9 +1955,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/language",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/language"
             },
             "bind": null,
             "providers": [
@@ -2047,9 +1974,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/pop",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/pop"
             },
             "bind": null,
             "providers": [
@@ -2068,9 +1993,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/vacation",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/vacation"
             },
             "bind": null,
             "providers": [
@@ -2095,7 +2018,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/sendAs",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2123,9 +2045,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}"
             },
             "bind": null,
             "providers": [
@@ -2152,9 +2072,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}"
             },
             "bind": null,
             "providers": [
@@ -2173,9 +2091,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/sendAs",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs"
             },
             "bind": null,
             "providers": [
@@ -2207,7 +2123,6 @@
             "request": {
               "method": "PATCH",
               "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2240,9 +2155,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo/{id}"
             },
             "bind": null,
             "providers": [
@@ -2274,9 +2187,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo/{id}"
             },
             "bind": null,
             "providers": [
@@ -2308,7 +2219,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2336,9 +2246,7 @@
             },
             "request": {
               "method": "GET",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo"
             },
             "bind": null,
             "providers": [
@@ -2370,9 +2278,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo/{id}/setDefault",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/smimeInfo/{id}/setDefault"
             },
             "bind": null,
             "providers": [
@@ -2404,7 +2310,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2432,9 +2337,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/verify",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/settings/sendAs/{sendAsEmail}/verify"
             },
             "bind": null,
             "providers": [
@@ -2459,7 +2362,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/settings/autoForwarding",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2485,7 +2387,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/settings/imap",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2511,7 +2412,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/settings/language",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2537,7 +2437,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/settings/pop",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2563,7 +2462,6 @@
             "request": {
               "method": "PUT",
               "path": "/gmail/v1/users/me/settings/vacation",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2583,9 +2481,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/stop",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/stop"
             },
             "bind": null,
             "providers": [
@@ -2612,9 +2508,7 @@
             },
             "request": {
               "method": "DELETE",
-              "path": "/gmail/v1/users/me/threads/{id}",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/threads/{id}"
             },
             "bind": null,
             "providers": [
@@ -2658,8 +2552,7 @@
               "query": {
                 "format": "{format}",
                 "metadataHeaders": "{metadataHeaders}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -2706,8 +2599,7 @@
                 "q": "{q}",
                 "includeSpamTrash": "{includeSpamTrash}",
                 "maxResults": "{maxResults}"
-              },
-              "body": null
+              }
             },
             "bind": null,
             "providers": [
@@ -2739,7 +2631,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/threads/{id}/modify",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2767,9 +2658,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/threads/{id}/trash",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/threads/{id}/trash"
             },
             "bind": null,
             "providers": [
@@ -2796,9 +2685,7 @@
             },
             "request": {
               "method": "POST",
-              "path": "/gmail/v1/users/me/threads/{id}/untrash",
-              "query": {},
-              "body": null
+              "path": "/gmail/v1/users/me/threads/{id}/untrash"
             },
             "bind": null,
             "providers": [
@@ -2823,7 +2710,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/watch",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
@@ -2948,7 +2834,6 @@
             "request": {
               "method": "POST",
               "path": "/gmail/v1/users/me/messages/send",
-              "query": {},
               "body": "{body}"
             },
             "bind": null,
