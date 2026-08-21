@@ -1,7 +1,7 @@
 {
   "type": "index",
-  "sequence": 1785989087,
-  "issuedAt": "2026-08-21T06:56:04.487Z",
+  "sequence": 1785989088,
+  "issuedAt": "2026-08-21T07:23:48.470Z",
   "plugins": [
     {
       "manifest": {
@@ -2841,7 +2841,7 @@
       "manifest": {
         "schemaVersion": 1,
         "id": "zeraix/gmail-send",
-        "version": "1.0.0",
+        "version": "1.1.0",
         "name": "Gmail",
         "description": "Send email from chat through your own Gmail account, with guidance on when not to.",
         "license": "Apache-2.0",
@@ -2918,8 +2918,39 @@
             "id": "send_email",
             "module": "mail",
             "name": "Send email",
-            "description": "Send an email from the signed-in Gmail account. Sent immediately; no draft is saved and there is no undo.",
+            "description": "Send an email from the signed-in Gmail account. Sent immediately; no draft is saved and there is no undo. Provide `body.raw`: the complete RFC 2822 message (To/Subject/body headers included), base64url-encoded.",
             "provider": "gmail_api",
+            "input_schema": {
+              "type": "object",
+              "properties": {
+                "body": {
+                  "type": "object",
+                  "description": "The Gmail Message resource. Set `raw` to the whole RFC 2822 message, base64url-encoded with no padding — for example the encoding of \"To: a@b.com\\r\\nSubject: Hi\\r\\n\\r\\nHello\". Optionally set `threadId` to reply within a thread.",
+                  "properties": {
+                    "raw": {
+                      "type": "string",
+                      "description": "The base64url-encoded RFC 2822 message."
+                    },
+                    "threadId": {
+                      "type": "string",
+                      "description": "Thread to send this message into, for a reply."
+                    }
+                  },
+                  "required": [
+                    "raw"
+                  ]
+                }
+              },
+              "required": [
+                "body"
+              ]
+            },
+            "request": {
+              "method": "POST",
+              "path": "/gmail/v1/users/me/messages/send",
+              "query": {},
+              "body": "{body}"
+            },
             "bind": null,
             "providers": [
               "gmail_api"
@@ -2932,7 +2963,7 @@
             "name": "Sending mail well",
             "description": "When to send, when to confirm first, and which failures not to retry.",
             "path": "skill.md",
-            "sha512": "bm+XP+Ag/dICU+t7S9bcq0OTlvESHZcgTb+X3ve71rmAE5wcsmHy2lxwcm0+3NDrZMFT2vdLl76i+mmMIO+efA==",
+            "sha512": "tNnuc7wTMQn8bt/kdTN/LZ/4xJjhQ7+2sMQdH91BLXdiihzG0BsWIPlEUEZy5HTx/sFlDWUIv1G+9p7B8Aq96g==",
             "provider": null,
             "bind": null,
             "providers": []
@@ -2940,7 +2971,7 @@
         ]
       },
       "dist": {
-        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/gmail-send/1.0.0/files/"
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/gmail-send/1.1.0/files/"
       }
     },
     {
