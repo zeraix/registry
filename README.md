@@ -10,9 +10,35 @@ an app release (see [plugin-marketplace-design.md](../docs/plugin-marketplace-de
 plugins/<publisher>/<name>/<version>/plugin.json   a submitted manifest (sha512 omitted — see below)
 plugins/<publisher>/<name>/<version>/files/…       its artifacts
 killlist.json                                      withdrawn plugins, hand-maintained
+unlisted.json                                      plugins held back from the catalogue
+dist/plugins/{index,killlist}.json                 the built feeds — generated, never hand-edited
 ```
 
-Nothing is generated here and there is no build output. What is committed is what gets published.
+What is committed under `plugins/` is what gets published. Nothing there is generated, and a plugin
+author writes nothing else.
+
+`dist/` is the exception, and it is a stopgap. Until the publish endpoint exists this repository *is*
+the origin — the app fetches `dist/plugins/` from raw GitHub — so the publish workflow rebuilds both
+feeds from the committed tree and pushes them back on every merge. **Never edit `dist/` by hand.**
+Run `node .github/scripts/build-feeds.mjs --root . --app <app checkout>` if you need to see what a
+merge would publish; a hand-written feed goes stale the moment a plugin lands, which is the bug this
+builder exists to end.
+
+Two things it will refuse, both of which have already happened once:
+
+- **A digest taken from a modified working tree.** The feed pins the bytes the origin serves, which
+  are the committed blobs. On a Windows checkout the working tree is CRLF and the blob is LF, so a
+  feed built from unstaged files pins digests no client can ever reproduce — every install would fail
+  its integrity check on the user's machine, long after review.
+- **A sequence that does not climb.** Clients refuse any feed below the one they hold, so a counter
+  (a CI run number, say) started next to a timestamp-shaped sequence would be refused by every client
+  that has ever refreshed, permanently and silently. The builder derives the next value from the
+  published feed and will not take an override below it.
+
+A plugin can be committed but kept out of the catalogue by adding it to `unlisted.json` — for things
+that exist to be copied rather than installed, like `zeraix/oauth-template`. The built-in skills are
+left out too, since the app already ships all ten; `--include-generated` publishes them when the
+marketplace is ready to replace that built-in set.
 
 The app's **built-in skills** are not committed: the publish workflow regenerates them from
 `src/skills/*.md` in the app repo on every run, so there is one copy of each skill and the two cannot
@@ -132,6 +158,10 @@ train everyone to ignore it.
    supply: `sha512` per artifact computed from the bytes, one document embedding every manifest, a
    monotonic feed `sequence`, and https artifact URLs. See the comment above the upload step.
 2. Set the `PUBLISH_URL` repository variable and the `PUBLISH_TOKEN` secret.
-3. Flip `PLUGINS_UI_ENABLED` in the app's `src/constants/App.ts` and ship a release. Until then the
+3. Point `NEXT_PUBLIC_PLUGIN_ORIGIN` at it and stop tracking `dist/` (add `/dist` back to
+   `.gitignore`). Serving the feeds from raw GitHub puts the integrity of every install behind a host
+   this project does not control, and raw GitHub is unreachable from mainland China — the reason
+   `registryClient.mjs` says nothing there fetches from GitHub.
+4. Flip `PLUGINS_UI_ENABLED` in the app's `src/constants/App.ts` and ship a release. Until then the
    client never configures the registry and makes no plugin requests.
 

@@ -1,7 +1,7 @@
 {
   "type": "index",
-  "sequence": 1785989085,
-  "issuedAt": "2026-08-06T04:04:45.469Z",
+  "sequence": 1785989086,
+  "issuedAt": "2026-08-21T02:05:19.005Z",
   "plugins": [
     {
       "manifest": {
@@ -30,7 +30,9 @@
               ],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           }
         },
         "capabilities": [
@@ -128,7 +130,9 @@
                 "prompt": "API base URL — leave blank for github.com, set it for a self-hosted or enterprise instance",
                 "secret": false
               }
-            ]
+            ],
+            "oauth": null,
+            "auth": null
           }
         },
         "capabilities": [
@@ -369,6 +373,112 @@
     {
       "manifest": {
         "schemaVersion": 1,
+        "id": "zeraix/gmail-send",
+        "version": "1.0.0",
+        "name": "Gmail",
+        "description": "Send email from chat through your own Gmail account, with guidance on when not to.",
+        "license": "Apache-2.0",
+        "homepage": "https://github.com/zeraix/registry/tree/main/plugins/zeraix/gmail-send",
+        "publisher": "zeraix",
+        "providers": {
+          "google_auth": {
+            "kind": "oauth",
+            "tier": "host",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": null,
+            "sha512": null,
+            "permissions": {
+              "network": [
+                "accounts.google.com",
+                "oauth2.googleapis.com"
+              ],
+              "filesystem": [],
+              "credentials": []
+            },
+            "needs": [],
+            "oauth": {
+              "known_provider": "google",
+              "authorize_url": null,
+              "token_url": null,
+              "refresh_url": null,
+              "refresh_grant_type": null,
+              "scopes": [
+                "https://www.googleapis.com/auth/gmail.send"
+              ],
+              "client": {
+                "type": "host",
+                "id": null,
+                "need": null,
+                "secret_need": null
+              },
+              "redirect": {
+                "method": "loopback"
+              },
+              "mints": "gmail_oauth",
+              "pkce": true
+            },
+            "auth": null
+          },
+          "gmail_api": {
+            "kind": "http",
+            "tier": "sandboxed",
+            "runtime": null,
+            "entry": null,
+            "command": null,
+            "args": [],
+            "url": "https://gmail.googleapis.com",
+            "sha512": null,
+            "permissions": {
+              "network": [
+                "gmail.googleapis.com"
+              ],
+              "filesystem": [],
+              "credentials": [
+                "gmail_oauth"
+              ]
+            },
+            "needs": [],
+            "oauth": null,
+            "auth": "google_auth"
+          }
+        },
+        "capabilities": [
+          {
+            "type": "tool",
+            "id": "send_email",
+            "module": "mail",
+            "name": "Send email",
+            "description": "Send an email from the signed-in Gmail account. Sent immediately; no draft is saved and there is no undo.",
+            "provider": "gmail_api",
+            "bind": null,
+            "providers": [
+              "gmail_api"
+            ]
+          },
+          {
+            "type": "skill",
+            "id": "gmail_etiquette",
+            "module": "mail",
+            "name": "Sending mail well",
+            "description": "When to send, when to confirm first, and which failures not to retry.",
+            "path": "skill.md",
+            "sha512": "bm+XP+Ag/dICU+t7S9bcq0OTlvESHZcgTb+X3ve71rmAE5wcsmHy2lxwcm0+3NDrZMFT2vdLl76i+mmMIO+efA==",
+            "provider": null,
+            "bind": null,
+            "providers": []
+          }
+        ]
+      },
+      "dist": {
+        "baseUrl": "https://raw.githubusercontent.com/zeraix/registry/main/plugins/zeraix/gmail-send/1.0.0/files/"
+      }
+    },
+    {
+      "manifest": {
+        "schemaVersion": 1,
         "id": "zeraix/office-suite",
         "version": "1.0.0",
         "name": "Office Suite",
@@ -396,7 +506,9 @@
               ],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           },
           "cloud": {
             "kind": "mcp-http",
@@ -422,7 +534,9 @@
                 "prompt": "API token for the Office cloud service",
                 "secret": true
               }
-            ]
+            ],
+            "oauth": null,
+            "auth": null
           },
           "convert": {
             "kind": "process",
@@ -443,7 +557,9 @@
               ],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           },
           "gallery": {
             "kind": "http",
@@ -467,7 +583,9 @@
                 "prompt": "Locale for template descriptions, e.g. en-GB",
                 "secret": false
               }
-            ]
+            ],
+            "oauth": null,
+            "auth": null
           },
           "native": {
             "kind": "builtin",
@@ -483,7 +601,9 @@
               "filesystem": [],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           },
           "bundled": {
             "kind": "text",
@@ -499,7 +619,9 @@
               "filesystem": [],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           }
         },
         "capabilities": [
@@ -702,7 +824,9 @@
               ],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           }
         },
         "capabilities": [
@@ -788,7 +912,9 @@
               "filesystem": [],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           }
         },
         "capabilities": [
@@ -873,7 +999,9 @@
               ],
               "credentials": []
             },
-            "needs": []
+            "needs": [],
+            "oauth": null,
+            "auth": null
           }
         },
         "capabilities": [

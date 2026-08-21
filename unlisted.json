@@ -1,0 +1,9 @@
+{
+  "_comment": "Plugins this repository holds but does not offer in the catalogue. Committed, reviewed and validated like any other plugin — simply not listed, because installing them is not what they are for. Removing an entry here publishes the plugin on the next build; see .github/scripts/build-feeds.mjs.",
+  "entries": [
+    {
+      "id": "zeraix/oauth-template",
+      "reason": "Scaffolding to copy, not a plugin to install — it calls example.com and does nothing for a user who installs it."
+    }
+  ]
+}

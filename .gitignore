@@ -1,7 +1,19 @@
-# Build output: regenerated on every publish. Never committed — a stale feed in the repo is a
-# rollback waiting to be served. (This is also why the publish workflow passes --sequence from
-# run_number: with no previous dist/ to count from, the builder cannot derive one.)
+# dist/ is build output, and right now it is COMMITTED build output — the exception this file used to
+# forbid outright. The app fetches its catalogue from
+# raw.githubusercontent.com/zeraix/registry/main/dist, an origin that can serve nothing which is not
+# committed, so the publish workflow rebuilds both feeds and pushes them back on every merge
+# (.github/workflows/publish.yml).
+#
+# The risk the old rule guarded against is real and unchanged: a feed edited by hand goes stale the
+# moment a plugin lands, and a stale feed is a rollback waiting to be served. What makes this safe
+# enough to live with is that nothing writes dist/ by hand — the builder derives each sequence from
+# the published feed so it can only climb, rewrites nothing when the catalogue has not changed, and
+# refuses to publish a digest taken from a modified working tree.
+#
+# When the publish endpoint exists, put /dist back here and let the endpoint serve the feeds.
 
+# The app checkout the workflows borrow the validator from. Never part of this repository.
+/.app/
 
 # The app's built-in skills are ALSO not committed — but that rule lives in plugins/zeraix/.gitignore,
 # which the exporter regenerates with one entry per generated skill. It is deliberately not a

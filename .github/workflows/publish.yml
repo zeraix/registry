@@ -18,8 +18,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# The feeds are committed build output (see the build step), so this job pushes to main.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   publish:
@@ -70,6 +71,71 @@ jobs:
       - name: Validate everything
         run: node .github/scripts/validate-submissions.mjs --root . --app .app --allow-reserved
 
+      # dist/ IS the origin today. The app's NEXT_PUBLIC_PLUGIN_ORIGIN points at
+      # raw.githubusercontent.com/zeraix/registry/main/dist, which can serve nothing but committed
+      # bytes, so the catalogue is rebuilt from the validated tree and pushed back on every merge.
+      # When the publish endpoint below exists, this same script feeds it and dist/ stops being
+      # tracked -- the builder does not change, only where its output goes.
+      #
+      # AFTER validation, deliberately: the strict gate runs first, so nothing reaches the catalogue
+      # that review would have refused.
+      #
+      # The built-in skills materialized above are gitignored and therefore left out of the feed —
+      # they are not committed, so a raw.githubusercontent URL for them would resolve to nothing and
+      # publish an entry no user can install. `--include-generated` is the flip for when the
+      # marketplace replaces the app's built-in set (design doc §9 phase 1).
+      - name: Build the feeds
+        run: node .github/scripts/build-feeds.mjs --root . --app .app
+
+      # The builder rewrites nothing when the catalogue is unchanged, so most merges reach this step
+      # with a clean dist/ and commit nothing.
+      #
+      # `[skip ci]` is what breaks the loop: this workflow triggers on push to main, and the push
+      # below is a push to main. The no-change guard would stop the second run doing any damage, but
+      # every merge would still cost two runs, one of which exists only to discover it is redundant.
+      - name: Commit the feeds
+        run: |
+          if git diff --quiet -- dist; then
+            echo "::notice::The catalogue is unchanged — no feed was rewritten and nothing was committed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # A merge landing while this ran makes the push non-fast-forward. The feeds are DERIVED, so
+          # the fix is never to merge two versions of them — it is to rebuild on whatever main now
+          # says and try again. Rebasing instead would ask git to reconcile two generated documents,
+          # and the winner of that would be decided by conflict markers rather than by the tree.
+          for attempt in 1 2 3; do
+            git add dist
+            git commit -q -m "Rebuild the plugin feeds [skip ci]" -m "Built from ${GITHUB_SHA} by .github/workflows/publish.yml."
+            if git push; then break; fi
+            if [ "$attempt" = "3" ]; then
+              echo "::error::Could not push the rebuilt feeds after 3 attempts — main is moving faster"
+              echo "::error::than this job can rebuild. The catalogue is now behind the tree; re-run this"
+              echo "::error::workflow once merges settle."
+              exit 1
+            fi
+            echo "::notice::main moved while building — rebuilding the feeds on the new tip (attempt $attempt)."
+            git fetch origin main
+            git reset --hard origin/main
+            node .github/scripts/build-feeds.mjs --root . --app .app
+            if git diff --quiet -- dist; then
+              echo "::notice::The newer main already carries this catalogue — nothing left to commit."
+              exit 0
+            fi
+          done
+          {
+            echo "## ✅ Catalogue updated"
+            echo
+            echo "\`dist/plugins/\` was rebuilt from the committed tree and pushed to \`main\`. Clients"
+            echo "fetching the raw origin pick it up on their next refresh — this one **did** change what"
+            echo "users see."
+            echo
+            echo "<sub>Artifact digests are computed from the committed blobs, which is what the origin"
+            echo "serves; the builder refuses to publish a digest taken from a modified working tree.</sub>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # Bootstrap vs misconfigured — a distinction worth making, because they deserve opposite
       # outcomes. Before the publish endpoint exists, validation-only is the honest result and a red X
       # on every merge would just train everyone to ignore this workflow.
@@ -79,22 +145,23 @@ jobs:
           PUBLISH_URL: ${{ vars.PUBLISH_URL }}
         run: |
           if [ -z "$PUBLISH_URL" ]; then
-            echo "::notice::No publish endpoint configured — validated and stopped. Nothing was uploaded."
+            echo "::notice::No publish endpoint configured — the feeds were served from dist/ instead."
             {
-              echo "## ⚠️ Nothing was published"
+              echo "## ℹ️ Published to \`dist/\`, not to an endpoint"
               echo
-              echo "The manifests validated, and that is **all** this run did. No \`PUBLISH_URL\` is"
-              echo "configured, so nothing was uploaded and the catalogue the app fetches is unchanged."
+              echo "The manifests validated and the feeds were rebuilt and committed above, which is how"
+              echo "the catalogue reaches users today: the app fetches \`dist/plugins/\` from the raw"
+              echo "GitHub origin. No \`PUBLISH_URL\` is configured, so nothing was uploaded anywhere else."
               echo
-              echo "A green check on this run does **not** mean the marketplace updated."
+              echo "That arrangement is a stopgap — it puts the integrity of every install behind a host"
+              echo "this repo does not control, and raw GitHub is unreachable from mainland China."
               echo
-              echo "To actually publish:"
+              echo "To publish properly:"
               echo
               echo "1. Stand up the publish endpoint — it owes the client artifact digests, one document"
               echo "   embedding every manifest, and a monotonic feed sequence. See the README checklist."
               echo "2. Set the \`PUBLISH_URL\` variable and the \`PUBLISH_TOKEN\` secret."
-              echo "3. Flip \`PLUGINS_UI_ENABLED\` in the app and ship a release — until then the client"
-              echo "   never contacts the registry at all."
+              echo "3. Point \`NEXT_PUBLIC_PLUGIN_ORIGIN\` at it, stop tracking \`dist/\`, and ship a release."
             } >> "$GITHUB_STEP_SUMMARY"
             echo "publish=false" >> "$GITHUB_OUTPUT"
             exit 0
